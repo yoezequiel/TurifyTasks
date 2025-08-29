@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import healthRoutes from './routes/health.js';
 import { initializeDatabase } from './db.js';
 
+import session from 'express-session';
+import authRoutes from './routes/auth.js';
+
 // Cargar variables de entorno
 dotenv.config();
 
@@ -14,8 +17,17 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Configuración de sesión
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'turifytasks_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+}));
+
 // Rutas
 app.use('/api', healthRoutes);
+app.use('/api/auth', authRoutes);
 
 // Middleware de manejo de errores
 app.use((err, _req, res, _next) => {
