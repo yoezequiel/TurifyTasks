@@ -15,7 +15,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:4321', // Origen específico del frontend
+    credentials: true, // Permitir credenciales (cookies, auth headers, etc.)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Configuración de sesión
