@@ -1,0 +1,149 @@
+---
+// register.astro
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Registro - TurifyTasks</title>
+		<link rel="stylesheet" href="/src/styles/register.css" />
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<div class="logo">
+					<div class="logo-icon">✓</div>
+					<span style="font-size: 20px; font-weight: bold;">TurifyTasks</span>
+				</div>
+				<h1 class="title">Crear cuenta</h1>
+				<p class="subtitle">Únete y gestiona tus tareas de manera eficiente</p>
+			</div>
+			
+			<div class="form-container">
+				<div id="errorMessage" class="error-message"></div>
+				<div id="successMessage" class="success-message"></div>
+				
+				<form id="registerForm">
+					<div class="form-group">
+						<label for="username" class="form-label">Nombre de usuario</label>
+						<input 
+							type="text" 
+							id="username" 
+							name="username" 
+							class="form-input" 
+							placeholder="Elige un nombre de usuario"
+							required
+							minlength="3"
+						>
+					</div>
+					
+					<div class="form-group">
+						<label for="email" class="form-label">Correo electrónico</label>
+						<input 
+							type="email" 
+							id="email" 
+							name="email" 
+							class="form-input" 
+							placeholder="tu@email.com"
+							required
+						>
+					</div>
+					
+					<div class="form-group">
+						<label for="password" class="form-label">Contraseña</label>
+						<input 
+							type="password" 
+							id="password" 
+							name="password" 
+							class="form-input" 
+							placeholder="Mínimo 6 caracteres"
+							required
+							minlength="6"
+						>
+					</div>
+					
+					<button type="submit" class="btn-primary" id="submitBtn">
+						<span id="buttonText">Crear cuenta</span>
+						<div class="loading" id="loadingSpinner">
+							<div class="spinner"></div>
+							<span>Creando cuenta...</span>
+						</div>
+					</button>
+				</form>
+				
+				<div class="login-link">
+					<p>¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a></p>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			document.getElementById('registerForm').addEventListener('submit', async function(e) {
+				e.preventDefault();
+				
+				const username = document.getElementById('username').value;
+				const email = document.getElementById('email').value;
+				const password = document.getElementById('password').value;
+				const submitBtn = document.getElementById('submitBtn');
+				const buttonText = document.getElementById('buttonText');
+				const loadingSpinner = document.getElementById('loadingSpinner');
+				const errorMessage = document.getElementById('errorMessage');
+				const successMessage = document.getElementById('successMessage');
+				
+				// Limpiar mensajes previos
+				if (errorMessage) errorMessage.style.display = 'none';
+				if (successMessage) successMessage.style.display = 'none';
+				
+				// Mostrar loading
+				if (submitBtn) submitBtn.disabled = true;
+				if (buttonText) buttonText.style.display = 'none';
+				if (loadingSpinner) loadingSpinner.style.display = 'flex';
+				
+				try {
+					const response = await fetch('http://localhost:3000/api/auth/register', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ username, email, password })
+					});
+					
+					const data = await response.json();
+					
+					if (response.ok) {
+						// Registro exitoso
+						if (successMessage) {
+							successMessage.textContent = '¡Cuenta creada exitosamente! Redirigiendo al login...';
+							successMessage.style.display = 'block';
+						}
+						
+						// Redirigir después de 2 segundos
+						setTimeout(() => {
+							window.location.href = '/login';
+						}, 2000);
+					} else {
+						// Error en el registro
+						if (errorMessage) {
+							errorMessage.textContent = data.error || 'Error al crear la cuenta. Por favor, inténtalo de nuevo.';
+							errorMessage.style.display = 'block';
+						}
+					}
+				} catch (error) {
+					console.error('Error:', error);
+					if (errorMessage) {
+						errorMessage.textContent = 'Error de conexión. Verifica que el servidor esté funcionando.';
+						errorMessage.style.display = 'block';
+					}
+				} finally {
+					// Restaurar botón
+					if (submitBtn) submitBtn.disabled = false;
+					if (buttonText) buttonText.style.display = 'inline';
+					if (loadingSpinner) loadingSpinner.style.display = 'none';
+				}
+			});
+		</script>
+	</body>
+</html>

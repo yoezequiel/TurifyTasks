@@ -12,9 +12,9 @@ router.post('/login', loginUser);
 // Logout
 router.post('/logout', logoutUser);
 
-// Ejemplo de ruta protegida
-// router.get('/profile', isAuthenticated, (req, res) => {
-//     res.json({ user: req.session.user });
-// });
+// Ruta protegida para obtener perfil del usuario
+router.get('/profile', isAuthenticated, (req, res) => {
+    res.json({ user: req.session.user });
+});
 
 export default router;

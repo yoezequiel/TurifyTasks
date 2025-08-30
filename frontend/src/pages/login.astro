@@ -1,0 +1,144 @@
+---
+// login.astro
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Iniciar Sesión - TurifyTasks</title>
+		<link rel="stylesheet" href="/src/styles/login.css" />
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<div class="logo">
+					<div class="logo-icon">✓</div>
+					<span style="font-size: 20px; font-weight: bold;">TurifyTasks</span>
+				</div>
+				<h1 class="title">Bienvenido de vuelta</h1>
+				<p class="subtitle">Accede a tu cuenta para continuar</p>
+			</div>
+			
+			<div class="form-container">
+				<div class="welcome-back">
+					Inicia sesión para acceder a tu bandeja de entrada
+				</div>
+				
+				<div id="errorMessage" class="error-message"></div>
+				<div id="successMessage" class="success-message"></div>
+				
+				<form id="loginForm">
+					<div class="form-group">
+						<label for="email" class="form-label">Correo electrónico</label>
+						<input 
+							type="email" 
+							id="email" 
+							name="email" 
+							class="form-input" 
+							placeholder="tu@email.com"
+							required
+						>
+					</div>
+					
+					<div class="form-group">
+						<label for="password" class="form-label">Contraseña</label>
+						<input 
+							type="password" 
+							id="password" 
+							name="password" 
+							class="form-input" 
+							placeholder="Tu contraseña"
+							required
+						>
+					</div>
+					
+					<button type="submit" class="btn-primary" id="submitBtn">
+						<span id="buttonText">Iniciar sesión</span>
+						<div class="loading" id="loadingSpinner">
+							<div class="spinner"></div>
+							<span>Iniciando sesión...</span>
+						</div>
+					</button>
+				</form>
+				
+				<div class="register-link">
+					<p>¿No tienes una cuenta? <a href="/register">Regístrate aquí</a></p>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			document.getElementById('loginForm').addEventListener('submit', async function(e) {
+				e.preventDefault();
+				
+				const email = document.getElementById('email').value;
+				const password = document.getElementById('password').value;
+				const submitBtn = document.getElementById('submitBtn');
+				const buttonText = document.getElementById('buttonText');
+				const loadingSpinner = document.getElementById('loadingSpinner');
+				const errorMessage = document.getElementById('errorMessage');
+				const successMessage = document.getElementById('successMessage');
+				
+				// Limpiar mensajes previos
+				if (errorMessage) errorMessage.style.display = 'none';
+				if (successMessage) successMessage.style.display = 'none';
+				
+				// Mostrar loading
+				if (submitBtn) submitBtn.disabled = true;
+				if (buttonText) buttonText.style.display = 'none';
+				if (loadingSpinner) loadingSpinner.style.display = 'flex';
+				
+				try {
+					const response = await fetch('http://localhost:3000/api/auth/login', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						credentials: 'include', // Importante para cookies de sesión
+						body: JSON.stringify({ email, password })
+					});
+					
+					const data = await response.json();
+					
+					if (response.ok) {
+						// Login exitoso
+						if (successMessage) {
+							successMessage.textContent = '¡Inicio de sesión exitoso! Redirigiendo...';
+							successMessage.style.display = 'block';
+						}
+						
+						// Guardar token si viene en la respuesta
+						if (data.token) {
+							localStorage.setItem('authToken', data.token);
+						}
+						
+						// Redirigir después de 1 segundo
+						setTimeout(() => {
+							window.location.href = '/dashboard';
+						}, 1000);
+					} else {
+						// Error en el login
+						if (errorMessage) {
+							errorMessage.textContent = data.error || 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.';
+							errorMessage.style.display = 'block';
+						}
+					}
+				} catch (error) {
+					console.error('Error:', error);
+					if (errorMessage) {
+						errorMessage.textContent = 'Error de conexión. Verifica que el servidor esté funcionando.';
+						errorMessage.style.display = 'block';
+					}
+				} finally {
+					// Restaurar botón
+					if (submitBtn) submitBtn.disabled = false;
+					if (buttonText) buttonText.style.display = 'inline';
+					if (loadingSpinner) loadingSpinner.style.display = 'none';
+				}
+			});
+		</script>
+	</body>
+</html>
