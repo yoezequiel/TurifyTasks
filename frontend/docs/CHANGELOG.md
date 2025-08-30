@@ -5,6 +5,114 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-08-30
+
+### ✨ Added - Nuevas Funcionalidades
+- **Toggle de Contraseña (Show/Hide Password)**
+  - Botón de "ojito" en campos de contraseña
+  - Iconos SVG de eye/eye-off con transiciones suaves
+  - Funcionalidad en páginas de login y registro
+  - Posicionamiento absoluto dentro del input
+
+- **Validación en Tiempo Real**
+  - Validación automática al salir de cada campo (blur event)
+  - Mensajes de error específicos debajo de cada input
+  - Validación completa antes del envío del formulario
+  - Prevención de envíos con datos inválidos
+
+- **Mejores Mensajes de Error**
+  - Mensajes contextuales por cada campo
+  - Retroalimentación visual con bordes rojos
+  - Texto de error específico y claro
+  - Estados de error persistentes hasta corrección
+
+### 🎨 Styling - Mejoras de Diseño
+- **Estados de Error Visual**
+  - Bordes rojos en campos inválidos (`border-color: #dc2626`)
+  - Fondo rosa claro en inputs con error (`background: #fef2f2`)
+  - Texto de error en rojo con tamaño pequeño (12px)
+  - Transiciones suaves entre estados
+
+- **Toggle de Contraseña**
+  - Contenedor relativo para posicionamiento
+  - Padding derecho ajustado en inputs (50px)
+  - Botón hover con color de marca (`#0c5a34`)
+  - Iconos SVG con stroke consistente
+
+- **Loading States Mejorados**
+  - Spinner único sin texto para carga más limpia
+  - Centrado perfecto con flexbox
+  - Animación de rotación suave
+  - Estados disabled apropiados
+
+### 🔧 Technical - Mejoras Técnicas
+- **Validación JavaScript**
+  - Función `validateUsername()`: mínimo 3 caracteres, solo alfanuméricos y guiones bajos
+  - Función `validateEmail()`: regex completo para formato de email
+  - Función `validatePassword()`: mínimo 6 caracteres en login y registro
+  - Sistema modular de mostrar/ocultar errores
+
+- **Event Listeners**
+  - Validación en evento `blur` para cada campo
+  - Toggle de contraseña en evento `click`
+  - Prevención de envío con validación fallida
+  - Gestión de estados de formulario
+
+- **Mensajes de Backend Actualizados**
+  - Cambio de "Credenciales inválidas" a "Correo o contraseña incorrectos"
+  - Mensajes más user-friendly y comprensibles
+  - Consistencia entre frontend y backend
+
+### 📱 UX/UI Improvements - Mejoras de Experiencia
+- **Retroalimentación Inmediata**
+  - Validación instantánea al cambiar de campo
+  - Mensajes de error claros y específicos
+  - Estados visuales de éxito y error
+
+- **Accesibilidad**
+  - Mensajes de error asociados a sus campos
+  - Contraste apropiado en estados de error
+  - Botones con áreas de toque adecuadas
+
+- **Flujo de Usuario Optimizado**
+  - Redirección más rápida tras registro/login (1-1.5s)
+  - Mensajes de éxito sin "Redirigiendo..."
+  - Loading states más profesionales
+
+### 🛠️ Code Quality - Calidad de Código
+- **Funciones Modulares**
+  - Separación de lógica de validación
+  - Funciones reutilizables para manejo de errores
+  - Código más mantenible y testeable
+
+- **CSS Organizado**
+  - Nuevas clases para estados de error
+  - Posicionamiento consistente
+  - Variables implícitas para colores de error
+
+### 📋 Validation Rules - Reglas de Validación
+
+#### Registro (`/register`)
+- **Username**: 
+  - Mínimo 3 caracteres
+  - Solo letras, números y guiones bajos
+  - Mensaje: "El nombre de usuario debe tener al menos 3 caracteres"
+- **Email**:
+  - Formato válido (usuario@dominio.com)
+  - Mensaje: "Por favor ingresa un correo electrónico válido"
+- **Password**:
+  - Mínimo 6 caracteres
+  - Mensaje: "La contraseña debe tener al menos 6 caracteres"
+
+#### Login (`/login`)
+- **Email**:
+  - Formato válido
+  - Mensaje: "Por favor ingresa un correo electrónico válido"
+- **Password**:
+  - Obligatorio
+  - Mínimo 6 caracteres
+  - Mensaje: "La contraseña debe tener al menos 6 caracteres"
+
 ## [1.0.0] - 2025-08-30
 
 ### ✨ Added - Nuevas Funcionalidades

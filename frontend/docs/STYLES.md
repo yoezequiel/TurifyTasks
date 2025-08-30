@@ -40,6 +40,11 @@
 --error-border: #fecaca;
 --error-text: #dc2626;
 
+/* Estados de error en campos */
+--field-error-border: #dc2626;
+--field-error-bg: #fef2f2;
+--field-error-text: #dc2626;
+
 /* Estados neutros */
 --neutral-bg: #9ca3af;
 --border-light: #e5e7eb;
@@ -366,23 +371,106 @@ transition: transform 0.2s, box-shadow 0.2s;
 
 ## 🔧 Mejores Prácticas
 
+### Nuevos Componentes Implementados
+
+#### 🔍 Toggle de Contraseña
+```css
+/* Contenedor relativo para posicionamiento */
+.password-input-container {
+    position: relative;
+}
+
+/* Input con espacio para botón */
+.password-input {
+    padding-right: 50px;
+}
+
+/* Botón de toggle */
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.password-toggle:hover {
+    color: #0c5a34;
+}
+```
+
+#### ⚠️ Estados de Error en Campos
+```css
+/* Campo con error */
+.form-input.error {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+/* Mensaje de error debajo del campo */
+.field-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none; /* Mostrado dinámicamente con JS */
+}
+
+/* Estado visible del error */
+.field-error.show {
+    display: block;
+}
+```
+
+#### 🔄 Loading States Mejorados
+```css
+/* Contenedor de loading simplificado */
+.loading {
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Spinner sin texto */
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+```
+
 ### CSS Organization
 1. **Reset/Normalize**: Usar reset básico con `* { margin: 0; padding: 0; box-sizing: border-box; }`
 2. **Variables CSS**: Considerar migrar a custom properties para mejor mantenimiento
 3. **BEM Methodology**: Para proyectos más grandes, considerar BEM para naming
 4. **Mobile First**: Siempre diseñar desde móvil hacia desktop
+5. **Modular CSS**: Separar estilos por componente como `.password-input-container`
 
 ### Performance
 1. **Crítico Above-fold**: Inlinear CSS crítico si es necesario
 2. **Lazy Loading**: Para imágenes y componentes no críticos
 3. **Minificación**: En producción, minificar CSS
 4. **Concatenación**: Combinar archivos CSS cuando sea posible
+5. **Selectores Eficientes**: Evitar selectores complejos, usar clases específicas
 
 ### Accesibilidad
 1. **Contraste**: Verificar ratios de contraste WCAG AA (4.5:1 mínimo)
 2. **Focus States**: Siempre mantener estados de focus visibles
 3. **Color No Es Único Indicador**: No depender solo del color para comunicar información
 4. **Tamaños Mínimos**: Targets touch de mínimo 44px x 44px
+5. **Estados de Error**: Mensajes descriptivos además de colores
 
 ## 📋 Checklist de Implementación
 
@@ -393,6 +481,17 @@ transition: transform 0.2s, box-shadow 0.2s;
 - [ ] Verificar responsive design
 - [ ] Probar accesibilidad básica
 - [ ] Optimizar para performance
+- [ ] Agregar estados de error apropiados
+- [ ] Implementar loading states
+- [ ] Validar con diferentes tamaños de pantalla
+
+### ✅ Checklist de Validación Visual
+- [ ] Campos con estados de error claros
+- [ ] Mensajes de error legibles y posicionados correctamente
+- [ ] Toggle de contraseña funcional en móvil y desktop
+- [ ] Loading states no interfieren con layout
+- [ ] Transiciones suaves sin lag
+- [ ] Colores accesibles y contrastados
 
 ### ✅ Para Modificaciones
 - [ ] Mantener consistencia visual

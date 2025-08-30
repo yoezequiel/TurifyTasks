@@ -61,25 +61,41 @@ export const registerUser = async (req, res) => {
 // Controlador para login de usuario
 export const loginUser = async (req, res) => {
     try {
+        console.log('Body recibido en login:', req.body);
         const { email, password } = req.body;
         if (!email || !password) {
+            console.log('Faltan campos obligatorios');
             return res.status(400).json({ error: 'Faltan campos obligatorios' });
         }
+        
+        console.log('Buscando usuario con email:', email);
         const userResult = await db.execute({
             sql: 'SELECT * FROM users WHERE email = :email',
             args: { email: email }
         });
+        
+        console.log('Resultado de búsqueda:', userResult.rows.length, 'usuarios encontrados');
         if (userResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Credenciales inválidas' });
+            console.log('Usuario no encontrado para email:', email);
+            return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
         }
+        
         const user = userResult.rows[0];
+        console.log('Usuario encontrado:', { id: user.id, username: user.username, email: user.email });
+        
         const match = await bcrypt.compare(password, user.password_hash);
+        console.log('Comparación de contraseña:', match);
+        
         if (!match) {
-            return res.status(401).json({ error: 'Credenciales inválidas' });
+            console.log('Contraseña no coincide para usuario:', user.email);
+            return res.status(401).json({ error: 'Correo o contraseña incorrectos' });
         }
+        
         req.session.user = { id: user.id, username: user.username, email: user.email };
+        console.log('Login exitoso para usuario:', user.email);
         return res.json({ message: 'Inicio de sesión exitoso', user: req.session.user });
     } catch (error) {
+        console.error('Error en login:', error);
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
