@@ -18,8 +18,11 @@ Este proyecto implementa el sistema de autenticación frontend para TurifyTasks,
 - ✅ Sistema de registro de usuarios
 - ✅ Sistema de inicio de sesión
 - ✅ Dashboard básico con autenticación
+- ✅ **Toggle de contraseña (mostrar/ocultar)**
+- ✅ **Validación en tiempo real con mensajes específicos**
+- ✅ **Retroalimentación visual en campos con errores**
 - ✅ Diseño responsivo y moderno
-- ✅ Manejo de errores y estados de carga
+- ✅ Manejo de errores y estados de carga mejorados
 - ✅ Integración con backend (Express.js)
 - ✅ CSS modular separado
 - ✅ Configuración CORS adecuada
@@ -67,7 +70,12 @@ frontend/
 - **Archivo**: `src/pages/login.astro`
 - **CSS**: `src/styles/login.css`
 - **Función**: Autenticación de usuarios existentes
-- **Campos**: Email, Contraseña
+- **Campos**: Email, Contraseña (con toggle show/hide)
+- **Validación**: 
+  - Email formato válido
+  - Contraseña mínimo 6 caracteres
+  - Mensajes de error específicos debajo de cada campo
+- **Estados Visuales**: Campos con borde rojo cuando hay errores
 - **Redirección**: `/dashboard` (exitoso) o muestra error
 - **Acceso**: Público
 
@@ -75,7 +83,13 @@ frontend/
 - **Archivo**: `src/pages/register.astro`
 - **CSS**: `src/styles/register.css`
 - **Función**: Registro de nuevos usuarios
-- **Campos**: Nombre de usuario, Email, Contraseña
+- **Campos**: Nombre de usuario, Email, Contraseña (con toggle show/hide)
+- **Validación**: 
+  - Username: mínimo 3 caracteres, solo alfanuméricos y guiones bajos
+  - Email: formato válido
+  - Contraseña: mínimo 6 caracteres
+  - Mensajes de error específicos debajo de cada campo
+- **Estados Visuales**: Campos con borde rojo cuando hay errores
 - **Redirección**: `/login` (exitoso) o muestra error
 - **Acceso**: Público
 
@@ -294,6 +308,104 @@ El email o usuario ya está registrado
 - **Carga de CSS**: Archivos CSS externos se cachean mejor
 - **Validación**: Validación del lado cliente mejora UX
 - **Estados de carga**: Previenen múltiples submits accidentales
+
+## ✅ Sistema de Validación
+
+### Funcionalidades de Validación en Tiempo Real
+
+#### 🔍 Toggle de Contraseña
+- **Ubicación**: Campos de contraseña en login y registro
+- **Funcionalidad**: Botón de "ojito" para mostrar/ocultar contraseña
+- **Iconos**: SVG de eye/eye-off que cambian dinámicamente
+- **Styling**: Posicionado absolutamente dentro del input
+- **Interacción**: Hover effects con color de marca
+
+#### ⚡ Validación Automática
+- **Trigger**: Evento `blur` (al salir del campo)
+- **Feedback**: Mensajes específicos aparecen debajo del campo
+- **Visual**: Bordes rojos y fondo rosa claro en campos inválidos
+- **Prevención**: No permite envío con datos inválidos
+
+#### 📋 Reglas de Validación
+
+**Login (`/login`)**:
+- **Email**: 
+  - Formato válido (usuario@dominio.com)
+  - Mensaje: "Por favor ingresa un correo electrónico válido"
+- **Contraseña**: 
+  - Obligatoria y mínimo 6 caracteres
+  - Mensaje: "La contraseña debe tener al menos 6 caracteres"
+
+**Registro (`/register`)**:
+- **Username**: 
+  - Mínimo 3 caracteres
+  - Solo letras, números y guiones bajos (regex: `/^[a-zA-Z0-9_]+$/`)
+  - Mensaje: "El nombre de usuario debe tener al menos 3 caracteres"
+- **Email**: 
+  - Formato válido con regex completo
+  - Mensaje: "Por favor ingresa un correo electrónico válido"
+- **Contraseña**: 
+  - Mínimo 6 caracteres
+  - Mensaje: "La contraseña debe tener al menos 6 caracteres"
+
+#### 🎨 Estados Visuales
+```css
+/* Campo con error */
+.form-input.error {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+/* Mensaje de error */
+.field-error {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Toggle de contraseña */
+.password-toggle:hover {
+    color: #0c5a34;
+}
+```
+
+#### 🔧 Funciones JavaScript
+```javascript
+// Validación de email
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) ? null : 'Mensaje de error';
+}
+
+// Validación de username
+function validateUsername(username) {
+    if (username.length < 3) return 'Mínimo 3 caracteres';
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Solo alfanuméricos';
+    return null;
+}
+
+// Mostrar/ocultar errores
+function showFieldError(fieldId, message) {
+    const errorDiv = document.getElementById(fieldId + 'Error');
+    const inputField = document.getElementById(fieldId);
+    // Lógica de mostrar error
+}
+```
+
+#### 📱 Experiencia de Usuario
+1. **Usuario escribe en campo**
+2. **Sale del campo (blur)** → Validación automática
+3. **Error encontrado** → Mensaje específico aparece
+4. **Campo se marca** → Borde rojo y fondo rosa
+5. **Usuario corrige** → Error desaparece automáticamente
+6. **Envío de formulario** → Validación final antes de submit
+7. **Loading state** → Spinner limpio sin texto
+8. **Éxito** → Mensaje breve y redirección rápida
+
+### Mensajes de Backend Actualizados
+- **Antes**: "Credenciales inválidas"
+- **Ahora**: "Correo o contraseña incorrectos"
+- **Beneficio**: Mensajes más user-friendly y comprensibles
 
 ## 📝 Notas de Desarrollo
 
