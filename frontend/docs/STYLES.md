@@ -138,10 +138,11 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 --border-width: 2px;
 --border-style: solid;
 --border-color: #e5e7eb;
---border-focus: #0c5a34;
+--border-focus: #0c5a34; 
 ```
 
-### Sombras
+
+### Estilo sombras
 
 #### Sistema de Elevación
 ```css
