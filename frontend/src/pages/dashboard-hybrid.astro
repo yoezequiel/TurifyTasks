@@ -540,18 +540,6 @@ import TaskForm from '../components/TaskForm.astro';
 				name?: string;
 			};
 
-			type TaskFormData = {
-				title: string;
-				description?: string;
-				priority: 'baja' | 'media' | 'alta' | 'high' | 'medium' | 'low';
-				due_date?: string;
-				list_id?: number;
-			};
-
-			type TaskFormDataWithId = TaskFormData & {
-				id?: number | string;
-			};
-
 			// Variables globales (de tu compañera)
 			let allTasks: Task[] = [];
 			let currentFilter = 'inbox';
@@ -574,12 +562,18 @@ import TaskForm from '../components/TaskForm.astro';
 			});
 
 			// Funciones de autenticación (de tu compañera)
-			async function checkAuthentication(): Promise<void> {
+			async function checkAuthentication() {
+				const token = localStorage.getItem('authToken');
+				if (!token) {
+					window.location.href = '/login';
+					return;
+				}
+
 				try {
 					const response = await fetch('http://localhost:3000/api/auth/profile', {
 						method: 'GET',
-						credentials: 'include', // Incluir cookies de sesión
 						headers: {
+							'Authorization': `Bearer ${token}`,
 							'Content-Type': 'application/json'
 						}
 					});
@@ -588,7 +582,6 @@ import TaskForm from '../components/TaskForm.astro';
 						const data = await response.json();
 						updateUserUI(data.user);
 					} else {
-						// Limpiar cualquier token viejo que pueda existir
 						localStorage.removeItem('authToken');
 						window.location.href = '/login';
 					}
@@ -607,15 +600,17 @@ import TaskForm from '../components/TaskForm.astro';
 			}
 
 			// Cargar tareas (de tu compañera + mejoras)
-			async function loadTasks(): Promise<void> {
+			async function loadTasks() {
 				const loadingState = document.getElementById('loadingState');
 				if (loadingState) loadingState.style.display = 'block';
 
+				const token = localStorage.getItem('authToken');
+				if (!token) return;
+
 				try {
 					const response = await fetch('http://localhost:3000/api/tasks', {
-						method: 'GET',
-						credentials: 'include', // Incluir cookies de sesión
 						headers: {
+							'Authorization': `Bearer ${token}`,
 							'Content-Type': 'application/json'
 						}
 					});
@@ -806,64 +801,49 @@ import TaskForm from '../components/TaskForm.astro';
 			}
 
 			// Funciones de tarea (híbrido: funcionalidad de compañera + integración con tus componentes)
-			async function toggleTask(taskId: string): Promise<void> {
-				console.log('toggleTask called with ID:', taskId, 'Type:', typeof taskId);
-				console.log('All tasks:', allTasks);
-				
-				// Buscar por diferentes campos de ID (comparación flexible)
-				const task = allTasks.find(t => {
-					const tId = String(t._id || t.id);
-					const searchId = String(taskId);
-					console.log('Comparing:', tId, '==', searchId, ':', tId === searchId);
-					return tId === searchId;
-				});
-				
-				console.log('Found task:', task);
-				
-				if (!task) {
-					console.log('No task found. Available IDs:', allTasks.map(t => String(t._id || t.id)));
-					return;
-				}
+			async function toggleTask(taskId: string) {
+				const task = allTasks.find(t => (t._id || t.id) === taskId);
+				if (!task) return;
 
-				const newState = !task.completed;
-				console.log('Toggling to:', newState);
-				
-				task.completed = newState;
+				const newCompletedState = !task.completed;
+				task.completed = newCompletedState;
 				updateTaskCounts();
 				renderTasks();
 
-				try {
-					console.log('Sending request to backend...');
-					const response = await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
-						method: 'PUT',
-						credentials: 'include',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ completed: newState })
-					});
-					
-					console.log('Response status:', response.status);
-					if (response.ok) {
-						showToast(newState ? 'Tarea completada' : 'Tarea pendiente', 'success');
-					} else {
-						throw new Error(`Error: ${response.status}`);
+				const token = localStorage.getItem('authToken');
+				if (token) {
+					try {
+						await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
+							method: 'PUT',
+							headers: {
+								'Authorization': `Bearer ${token}`,
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({ completed: newCompletedState })
+						});
+						showToast(newCompletedState ? 'Tarea completada' : 'Tarea marcada como pendiente', 'success');
+					} catch (error) {
+						console.error('Error updating task:', error);
+						// Revertir cambio local si falla
+						task.completed = !newCompletedState;
+						updateTaskCounts();
+						renderTasks();
+						showToast('Error al actualizar tarea', 'error');
 					}
-				} catch (error) {
-					console.error('Backend error:', error);
-					task.completed = !newState; // Revertir
-					updateTaskCounts();
-					renderTasks();
-					showToast('Error al actualizar', 'error');
 				}
 			}
 
-			async function deleteTask(taskId: string): Promise<void> {
+			async function deleteTask(taskId: string) {
 				if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
+
+				const token = localStorage.getItem('authToken');
+				if (!token) return;
 
 				try {
 					const response = await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
 						method: 'DELETE',
-						credentials: 'include', // Incluir cookies de sesión
 						headers: {
+							'Authorization': `Bearer ${token}`,
 							'Content-Type': 'application/json'
 						}
 					});
@@ -883,36 +863,37 @@ import TaskForm from '../components/TaskForm.astro';
 			}
 
 			// Función para búsqueda
-			function handleSearch(searchTerm: string): void {
+			function handleSearch(searchTerm: string) {
 				// Implementación simple - se puede mejorar
 				renderTasks();
 			}
 
-			function handlePriorityFilter(): void {
+			function handlePriorityFilter() {
 				// Implementación simple - se puede mejorar  
 				renderTasks();
 			}
 
-			function refreshTasks(): void {
+			function refreshTasks() {
 				loadTasks();
 				showToast('Tareas actualizadas', 'success');
 			}
 
 			// Integración con tus componentes avanzados
-			window.submitTask = async function(taskData: TaskFormData): Promise<void> {
-				if (!taskData.title?.trim()) throw new Error('El título es obligatorio');
+			window.submitTask = async function(taskData: any): Promise<void> {
+				const token = localStorage.getItem('authToken');
+				if (!token) throw new Error('No autorizado');
 
-				const isEdit = (taskData as any).id;
+				const isEdit = taskData.id;
 				const url = isEdit 
-					? `http://localhost:3000/api/tasks/${(taskData as any).id}` 
+					? `http://localhost:3000/api/tasks/${taskData.id}` 
 					: 'http://localhost:3000/api/tasks';
 				const method = isEdit ? 'PUT' : 'POST';
 
 				try {
 					const response = await fetch(url, {
 						method,
-						credentials: 'include', // Incluir cookies de sesión
 						headers: {
+							'Authorization': `Bearer ${token}`,
 							'Content-Type': 'application/json'
 						},
 						body: JSON.stringify(taskData)
@@ -932,20 +913,22 @@ import TaskForm from '../components/TaskForm.astro';
 			};
 
 			// Logout
-			async function logout(): Promise<void> {
-				try {
-					await fetch('http://localhost:3000/api/auth/logout', {
-						method: 'POST',
-						credentials: 'include', // Incluir cookies de sesión
-						headers: {
-							'Content-Type': 'application/json'
-						}
-					});
-				} catch (error) {
-					console.error('Error durante logout:', error);
+			async function logout() {
+				const token = localStorage.getItem('authToken');
+				if (token) {
+					try {
+						await fetch('http://localhost:3000/api/auth/logout', {
+							method: 'POST',
+							headers: {
+								'Authorization': `Bearer ${token}`,
+								'Content-Type': 'application/json'
+							}
+						});
+					} catch (error) {
+						console.error('Error durante logout:', error);
+					}
 				}
 				
-				// Limpiar cualquier token viejo que pueda existir
 				localStorage.removeItem('authToken');
 				window.location.href = '/login';
 			}

@@ -46,10 +46,9 @@ document.addEventListener('DOMContentLoaded', function() {
 					successMessage.style.display = 'block';
 				}
 				
-				// Guardar token si viene en la respuesta
-				if (data.token) {
-					localStorage.setItem('authToken', data.token);
-				}
+				// Guardar token si viene en la respuesta (no necesario para sesiones)
+				// Limpiar cualquier token viejo que pueda existir
+				localStorage.removeItem('authToken');
 				
 				// Redirigir después de 1 segundo
 				setTimeout(() => {
