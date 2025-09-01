@@ -1,0 +1,461 @@
+---
+// TaskForm.astro - Formulario para crear y editar tareas
+import type { Task } from '../types';
+
+interface Props {
+  id?: string;
+}
+
+const { id = 'taskForm' } = Astro.props;
+---
+
+<!-- Modal overlay -->
+<div id={id} class="task-form-modal" style="display: none;">
+  <div class="task-form-backdrop"></div>
+  <div class="task-form-container">
+    <div class="task-form-header">
+      <h2 class="task-form-title">Nueva Tarea</h2>
+      <button class="task-form-close" onclick="window.closeTaskForm()">&times;</button>
+    </div>
+    
+    <form id="taskFormElement" class="task-form-body">
+      <div class="form-group">
+        <label for="taskTitle" class="form-label">Título *</label>
+        <input 
+          type="text" 
+          id="taskTitle" 
+          name="title" 
+          class="form-input" 
+          placeholder="Escribe el título de la tarea"
+          required
+        />
+        <div class="form-error" id="titleError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="taskDescription" class="form-label">Descripción</label>
+        <textarea 
+          id="taskDescription" 
+          name="description" 
+          class="form-textarea" 
+          rows="3"
+          placeholder="Describe la tarea (opcional)"
+        ></textarea>
+        <div class="form-error" id="descriptionError"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="taskDueDate" class="form-label">Fecha límite</label>
+          <input 
+            type="date" 
+            id="taskDueDate" 
+            name="due_date" 
+            class="form-input"
+          />
+          <div class="form-error" id="dueDateError"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="taskPriority" class="form-label">Prioridad</label>
+          <select id="taskPriority" name="priority" class="form-select">
+            <option value="baja">🟢 Baja</option>
+            <option value="media" selected>🟡 Media</option>
+            <option value="alta">🔴 Alta</option>
+          </select>
+          <div class="form-error" id="priorityError"></div>
+        </div>
+      </div>
+
+      <div class="form-error general-error" id="generalError"></div>
+
+      <div class="task-form-footer">
+        <button type="button" class="btn-secondary" onclick="window.closeTaskForm()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn-primary" id="submitButton">
+          <span class="submit-text">Crear Tarea</span>
+          <span class="submit-loader" style="display: none;">⏳ Guardando...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .task-form-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .task-form-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  .task-form-container {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    animation: modalSlideIn 0.3s ease-out;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .task-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .task-form-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
+
+  .task-form-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .task-form-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  .task-form-body {
+    padding: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+  }
+
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    box-sizing: border-box;
+  }
+
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #0c5a34;
+    box-shadow: 0 0 0 3px rgba(12, 90, 52, 0.1);
+  }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .form-error {
+    margin-top: 6px;
+    color: #dc2626;
+    font-size: 12px;
+    min-height: 16px;
+  }
+
+  .general-error {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    display: none;
+  }
+
+  .general-error.show {
+    display: block;
+  }
+
+  .task-form-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .btn-secondary, .btn-primary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-secondary {
+    background: #f9fafb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+  }
+
+  .btn-secondary:hover {
+    background: #f3f4f6;
+  }
+
+  .btn-primary {
+    background: #0c5a34;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #0a4c2c;
+  }
+
+  .btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .task-form-container {
+      width: 95%;
+      margin: 0 10px;
+    }
+    
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    
+    .task-form-footer {
+      flex-direction: column;
+    }
+    
+    .btn-secondary, .btn-primary {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<script>
+  type Task = {
+    id: number;
+    title: string;
+    description?: string;
+    priority: 'baja' | 'media' | 'alta';
+    completed: boolean;
+    due_date?: string;
+    created_at: string;
+    updated_at: string;
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('taskFormElement') as HTMLFormElement;
+    const modal = document.getElementById('taskForm') as HTMLElement;
+    const backdrop = modal?.querySelector('.task-form-backdrop') as HTMLElement;
+
+    window.showTaskForm = function(mode: 'create' | 'edit' = 'create', taskData: Task | null = null) {
+      mode = mode || 'create';
+      const titleElement = document.querySelector('.task-form-title') as HTMLElement;
+      const submitButton = document.getElementById('submitButton') as HTMLButtonElement;
+      const submitText = document.querySelector('.submit-text') as HTMLElement;
+      
+      if (titleElement && submitText) {
+        if (mode === 'edit') {
+          titleElement.textContent = 'Editar Tarea';
+          submitText.textContent = 'Actualizar Tarea';
+        } else {
+          titleElement.textContent = 'Nueva Tarea';
+          submitText.textContent = 'Crear Tarea';
+        }
+      }
+
+      if (taskData && mode === 'edit') {
+        fillFormWithTaskData(taskData);
+      }
+      
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    };
+
+    // @ts-ignore
+    window.closeTaskForm = function(): void {
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+      if (form) {
+        form.reset();
+        clearErrors();
+      }
+    };
+
+    // @ts-ignore
+    function fillFormWithTaskData(task: Task): void {
+      if (!task) return;
+      
+      const titleInput = document.getElementById('taskTitle') as HTMLInputElement;
+      const descInput = document.getElementById('taskDescription') as HTMLTextAreaElement;
+      const dueDateInput = document.getElementById('taskDueDate') as HTMLInputElement;
+      const prioritySelect = document.getElementById('taskPriority') as HTMLSelectElement;
+      
+      if (titleInput) titleInput.value = task.title || '';
+      if (descInput) descInput.value = task.description || '';
+      if (dueDateInput) dueDateInput.value = task.due_date || '';
+      if (prioritySelect) prioritySelect.value = task.priority || 'media';
+    }
+
+    // @ts-ignore
+    window.handleTaskFormSubmit = async function(event: Event): Promise<void> {
+      event.preventDefault();
+      
+      const submitButton = document.getElementById('submitButton') as HTMLButtonElement;
+      updateSubmitButton(true);
+      
+      try {
+        const formData = new FormData(form);
+        const taskData = Object.fromEntries(formData.entries());
+        
+        if (typeof window.submitTask === 'function') {
+          await window.submitTask(taskData as any);
+          window.closeTaskForm();
+        } else {
+          console.error('Función submitTask no está definida');
+        }
+      } catch (error) {
+        console.error('Error al enviar formulario:', error);
+        showFormError('Error al procesar la tarea');
+      } finally {
+        updateSubmitButton(false);
+      }
+    };
+
+    // @ts-ignore
+    function validateForm(formData: FormData): boolean {
+      clearErrors();
+      let isValid = true;
+      
+      const title = formData.get('title') as string;
+      if (!title || title.trim() === '') {
+        showFieldError('title', 'El título es obligatorio');
+        isValid = false;
+      }
+      
+      return isValid;
+    }
+
+    function showFieldError(fieldName: string, message: string): void {
+      const errorElement = document.getElementById(`${fieldName}Error`) as HTMLElement;
+      if (errorElement) {
+        errorElement.textContent = message;
+      }
+    }
+
+    function clearErrors(): void {
+      const errorElements = document.querySelectorAll('.form-error');
+      errorElements.forEach(el => {
+        (el as HTMLElement).textContent = '';
+      });
+      
+      const generalError = document.getElementById('generalError') as HTMLElement;
+      if (generalError) {
+        generalError.classList.remove('show');
+      }
+    }
+
+    function showFormError(message: string): void {
+      const generalError = document.getElementById('generalError') as HTMLElement;
+      if (generalError) {
+        generalError.textContent = message;
+        generalError.classList.add('show');
+      }
+    }
+
+    function updateSubmitButton(loading: boolean): void {
+      const submitButton = document.getElementById('submitButton') as HTMLButtonElement;
+      const submitText = document.querySelector('.submit-text') as HTMLSpanElement;
+      const submitLoader = document.querySelector('.submit-loader') as HTMLSpanElement;
+      
+      if (submitButton) {
+        submitButton.disabled = loading;
+      }
+      
+      if (submitText && submitLoader) {
+        submitText.style.display = loading ? 'none' : 'inline';
+        submitLoader.style.display = loading ? 'inline' : 'none';
+      }
+    }
+
+    // Event listeners
+    if (form) {
+      form.addEventListener('submit', window.handleTaskFormSubmit);
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener('click', window.closeTaskForm);
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        window.closeTaskForm();
+      }
+    });
+  });
+</script>
