@@ -1,8 +1,9 @@
 ---
 // dashboard.astro - Dashboard híbrido que combina funcionalidad backend + componentes avanzados
-import type { Task, User } from '../types';
-import TaskList from '../components/TaskList.astro';
-import TaskForm from '../components/TaskForm.astro';
+import type { Task, User } from "../types";
+import TaskList from "../components/TaskList.astro";
+import TaskForm from "../components/TaskForm.astro";
+import ConfirmModal from "../components/ConfirmModal.astro";
 ---
 
 <html lang="es">
@@ -81,65 +82,111 @@ import TaskForm from '../components/TaskForm.astro';
 					</button>
 				</nav>
 			</aside>
+                <nav class="sidebar-nav">
+                    <button class="sidebar-item active" data-filter="inbox">
+                        <div class="sidebar-item-content">
+                            <span>📥 Bandeja de entrada</span>
+                            <span class="sidebar-item-count" id="inboxCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="today">
+                        <div class="sidebar-item-content">
+                            <span>📅 Hoy</span>
+                            <span class="sidebar-item-count" id="todayCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="upcoming">
+                        <div class="sidebar-item-content">
+                            <span>📋 Próximas</span>
+                            <span class="sidebar-item-count" id="upcomingCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="important">
+                        <div class="sidebar-item-content">
+                            <span>⭐ Importantes</span>
+                            <span class="sidebar-item-count" id="importantCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="completed">
+                        <div class="sidebar-item-content">
+                            <span>✅ Completadas</span>
+                            <span class="sidebar-item-count" id="completedCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                </nav>
+            </aside>
 
-			<!-- Main content -->
-			<main class="main-content">
-				<div class="main-header">
-					<h1 class="page-title" id="pageTitle">Bandeja de entrada</h1>
-					<p class="page-subtitle">Gestiona tus tareas de manera eficiente y organizada</p>
-				</div>
+            <!-- Main content -->
+            <main class="main-content">
+                <div class="main-header">
+                    <h1 class="page-title" id="pageTitle">
+                        Bandeja de entrada
+                    </h1>
+                    <p class="page-subtitle">
+                        Gestiona tus tareas de manera eficiente y organizada
+                    </p>
+                </div>
 
-				<!-- Búsqueda y filtros -->
-				<div class="search-section">
-					<div class="search-row">
-						<input 
-							type="text" 
-							class="search-input" 
-							placeholder="🔍 Buscar tareas..." 
-							id="searchInput"
-						>
-						<select class="filter-select" id="priorityFilter">
-							<option value="">Todas las prioridades</option>
-							<option value="high">🔴 Alta prioridad</option>
-							<option value="medium">🟡 Prioridad media</option>
-							<option value="low">🟢 Baja prioridad</option>
-						</select>
-					</div>
-				</div>
+                <!-- Búsqueda y filtros -->
+                <div class="search-section">
+                    <div class="search-row">
+                        <input
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar tareas..."
+                            id="searchInput"
+                        />
+                        <select class="filter-select" id="priorityFilter">
+                            <option value="">Todas las prioridades</option>
+                            <option value="high">🔴 Alta prioridad</option>
+                            <option value="medium">🟡 Prioridad media</option>
+                            <option value="low">🟢 Baja prioridad</option>
+                        </select>
+                    </div>
+                </div>
 
-				<!-- Acciones -->
-				<div class="actions-section">
-					<button class="action-btn primary" id="newTaskBtn">
-						➕ Nueva Tarea
-					</button>
-					<button class="action-btn secondary" id="refreshBtn">
-						🔄 Actualizar
-					</button>
-				</div>
+                <!-- Acciones -->
+                <div class="actions-section">
+                    <button class="action-btn primary" id="newTaskBtn">
+                        ➕ Nueva Tarea
+                    </button>
+                    <button class="action-btn secondary" id="refreshBtn">
+                        🔄 Actualizar
+                    </button>
+                </div>
 
-				<!-- Sección de tareas -->
-				<div class="tasks-section">
-					<div class="tasks-header">
-						<h2 class="tasks-title" id="sectionTitle">Bandeja de entrada</h2>
-						<span class="tasks-counter" id="taskCounter">0/0</span>
-					</div>
-					<div class="tasks-content">
-						<div class="loading-state" id="loadingState">
-							⏳ Cargando tareas...
-						</div>
-						<div id="tasksContainer">
-							<!-- Las tareas se renderizan aquí -->
-						</div>
-					</div>
-				</div>
-			</main>
-		</div>
+                <!-- Sección de tareas -->
+                <div class="tasks-section">
+                    <div class="tasks-header">
+                        <h2 class="tasks-title" id="sectionTitle">
+                            Bandeja de entrada
+                        </h2>
+                        <span class="tasks-counter" id="taskCounter">0/0</span>
+                    </div>
+                    <div class="tasks-content">
+                        <div class="loading-state" id="loadingState">
+                            ⏳ Cargando tareas...
+                        </div>
+                        <div id="tasksContainer">
+                            <!-- Las tareas se renderizan aquí -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
 
-		<!-- Modal de formulario (usa tu componente avanzado) -->
-		<TaskForm />
-
-		<!-- Contenedor de notificaciones -->
-		<div class="toast-container" id="toastContainer"></div>
+        <!-- Modal de formulario (usa tu componente avanzado) -->
+        <TaskForm />
 
 				<script type="module" src="/src/scripts/dashboard.js"></script>
 				<script type="module" src="/src/scripts/hamburger.js"></script>
