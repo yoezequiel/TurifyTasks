@@ -1,177 +1,211 @@
 ---
 // dashboard.astro - Dashboard híbrido que combina funcionalidad backend + componentes avanzados
-import type { Task, User } from '../types';
-import TaskList from '../components/TaskList.astro';
-import TaskForm from '../components/TaskForm.astro';
+import type { Task, User } from "../types";
+import TaskList from "../components/TaskList.astro";
+import TaskForm from "../components/TaskForm.astro";
+import ConfirmModal from "../components/ConfirmModal.astro";
 ---
 
 <html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Dashboard - TurifyTasks</title>
-	<link rel="stylesheet" href="/src/styles/components/Dashboard.css" />
-	</head>
-	<body>
-		<!-- Header -->
-		<header class="header">
-			<div class="header-content">
-				<div class="logo">
-					<div class="logo-icon">✓</div>
-					<span>TurifyTasks</span>
-				</div>
-				<div class="user-section">
-					<div class="user-info">
-						<div class="user-avatar" id="userAvatar">U</div>
-						<span id="userEmail">Cargando...</span>
-					</div>
-					<button class="logout-btn" id="logoutBtn">Cerrar sesión</button>
-				</div>
-			</div>
-		</header>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>Dashboard - TurifyTasks</title>
+        <link rel="stylesheet" href="/src/styles/components/Dashboard.css" />
+    </head>
+    <body>
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">✓</div>
+                    <span>TurifyTasks</span>
+                </div>
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar" id="userAvatar">U</div>
+                        <span id="userEmail">Cargando...</span>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn"
+                        >Cerrar sesión</button
+                    >
+                </div>
+            </div>
+        </header>
 
-		<div class="dashboard-layout">
-			<!-- Sidebar -->
-			<aside class="sidebar">
-				<div class="sidebar-header">
-					<div class="sidebar-title">Filtros</div>
-					<div class="sidebar-subtitle">Organiza tus tareas</div>
-				</div>
-				
-				<nav class="sidebar-nav">
-					<button class="sidebar-item active" data-filter="inbox">
-						<div class="sidebar-item-content">
-							<span>📥 Bandeja de entrada</span>
-							<span class="sidebar-item-count" id="inboxCount">0</span>
-						</div>
-					</button>
-					<button class="sidebar-item" data-filter="today">
-						<div class="sidebar-item-content">
-							<span>📅 Hoy</span>
-							<span class="sidebar-item-count" id="todayCount">0</span>
-						</div>
-					</button>
-					<button class="sidebar-item" data-filter="upcoming">
-						<div class="sidebar-item-content">
-							<span>📋 Próximas</span>
-							<span class="sidebar-item-count" id="upcomingCount">0</span>
-						</div>
-					</button>
-					<button class="sidebar-item" data-filter="important">
-						<div class="sidebar-item-content">
-							<span>⭐ Importantes</span>
-							<span class="sidebar-item-count" id="importantCount">0</span>
-						</div>
-					</button>
-					<button class="sidebar-item" data-filter="completed">
-						<div class="sidebar-item-content">
-							<span>✅ Completadas</span>
-							<span class="sidebar-item-count" id="completedCount">0</span>
-						</div>
-					</button>
-				</nav>
-			</aside>
+        <div class="dashboard-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">Filtros</div>
+                    <div class="sidebar-subtitle">Organiza tus tareas</div>
+                </div>
 
-			<!-- Main content -->
-			<main class="main-content">
-				<div class="main-header">
-					<h1 class="page-title" id="pageTitle">Bandeja de entrada</h1>
-					<p class="page-subtitle">Gestiona tus tareas de manera eficiente y organizada</p>
-				</div>
+                <nav class="sidebar-nav">
+                    <button class="sidebar-item active" data-filter="inbox">
+                        <div class="sidebar-item-content">
+                            <span>📥 Bandeja de entrada</span>
+                            <span class="sidebar-item-count" id="inboxCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="today">
+                        <div class="sidebar-item-content">
+                            <span>📅 Hoy</span>
+                            <span class="sidebar-item-count" id="todayCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="upcoming">
+                        <div class="sidebar-item-content">
+                            <span>📋 Próximas</span>
+                            <span class="sidebar-item-count" id="upcomingCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="important">
+                        <div class="sidebar-item-content">
+                            <span>⭐ Importantes</span>
+                            <span class="sidebar-item-count" id="importantCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                    <button class="sidebar-item" data-filter="completed">
+                        <div class="sidebar-item-content">
+                            <span>✅ Completadas</span>
+                            <span class="sidebar-item-count" id="completedCount"
+                                >0</span
+                            >
+                        </div>
+                    </button>
+                </nav>
+            </aside>
 
-				<!-- Búsqueda y filtros -->
-				<div class="search-section">
-					<div class="search-row">
-						<input 
-							type="text" 
-							class="search-input" 
-							placeholder="🔍 Buscar tareas..." 
-							id="searchInput"
-						>
-						<select class="filter-select" id="priorityFilter">
-							<option value="">Todas las prioridades</option>
-							<option value="high">🔴 Alta prioridad</option>
-							<option value="medium">🟡 Prioridad media</option>
-							<option value="low">🟢 Baja prioridad</option>
-						</select>
-					</div>
-				</div>
+            <!-- Main content -->
+            <main class="main-content">
+                <div class="main-header">
+                    <h1 class="page-title" id="pageTitle">
+                        Bandeja de entrada
+                    </h1>
+                    <p class="page-subtitle">
+                        Gestiona tus tareas de manera eficiente y organizada
+                    </p>
+                </div>
 
-				<!-- Acciones -->
-				<div class="actions-section">
-					<button class="action-btn primary" id="newTaskBtn">
-						➕ Nueva Tarea
-					</button>
-					<button class="action-btn secondary" id="refreshBtn">
-						🔄 Actualizar
-					</button>
-				</div>
+                <!-- Búsqueda y filtros -->
+                <div class="search-section">
+                    <div class="search-row">
+                        <input
+                            type="text"
+                            class="search-input"
+                            placeholder="🔍 Buscar tareas..."
+                            id="searchInput"
+                        />
+                        <select class="filter-select" id="priorityFilter">
+                            <option value="">Todas las prioridades</option>
+                            <option value="high">🔴 Alta prioridad</option>
+                            <option value="medium">🟡 Prioridad media</option>
+                            <option value="low">🟢 Baja prioridad</option>
+                        </select>
+                    </div>
+                </div>
 
-				<!-- Sección de tareas -->
-				<div class="tasks-section">
-					<div class="tasks-header">
-						<h2 class="tasks-title" id="sectionTitle">Bandeja de entrada</h2>
-						<span class="tasks-counter" id="taskCounter">0/0</span>
-					</div>
-					<div class="tasks-content">
-						<div class="loading-state" id="loadingState">
-							⏳ Cargando tareas...
-						</div>
-						<div id="tasksContainer">
-							<!-- Las tareas se renderizan aquí -->
-						</div>
-					</div>
-				</div>
-			</main>
-		</div>
+                <!-- Acciones -->
+                <div class="actions-section">
+                    <button class="action-btn primary" id="newTaskBtn">
+                        ➕ Nueva Tarea
+                    </button>
+                    <button class="action-btn secondary" id="refreshBtn">
+                        🔄 Actualizar
+                    </button>
+                </div>
 
-		<!-- Modal de formulario (usa tu componente avanzado) -->
-		<TaskForm />
+                <!-- Sección de tareas -->
+                <div class="tasks-section">
+                    <div class="tasks-header">
+                        <h2 class="tasks-title" id="sectionTitle">
+                            Bandeja de entrada
+                        </h2>
+                        <span class="tasks-counter" id="taskCounter">0/0</span>
+                    </div>
+                    <div class="tasks-content">
+                        <div class="loading-state" id="loadingState">
+                            ⏳ Cargando tareas...
+                        </div>
+                        <div id="tasksContainer">
+                            <!-- Las tareas se renderizan aquí -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
 
-		<!-- Contenedor de notificaciones -->
-		<div class="toast-container" id="toastContainer"></div>
+        <!-- Modal de formulario (usa tu componente avanzado) -->
+        <TaskForm />
 
-				<script type="module" src="/src/scripts/dashboard.js"></script>
-				<script>
-					// Espera a que el módulo dashboard.js cargue y exponga la función
-					window.addEventListener('DOMContentLoaded', function() {
-						// Reintenta hasta que la función esté disponible
-						let tries = 0;
-						const interval = setInterval(function() {
-							// Busca la función en los módulos importados
-							if (window.handleDelete || window.deleteTask) {
-								window.deleteTask = window.handleDelete || window.deleteTask;
-								clearInterval(interval);
-								console.log('[dashboard.astro] window.deleteTask asignada:', window.deleteTask);
-							}
-							if (++tries > 30) {
-								clearInterval(interval);
-								console.warn('[dashboard.astro] No se pudo asignar window.deleteTask');
-							}
-						}, 100);
-					});
-				</script>
-			<script>
-				// Espera a que el DOM y dashboard.js estén listos
-				window.addEventListener('DOMContentLoaded', function() {
-					// Espera a que dashboard.js exponga deleteTask en window
-					if (window.deleteTask) {
-						window.handleDelete = window.deleteTask;
-					} else {
-						// Si no está disponible aún, reintenta hasta que lo esté
-						let tries = 0;
-						const interval = setInterval(function() {
-							if (window.deleteTask) {
-								window.handleDelete = window.deleteTask;
-								clearInterval(interval);
-							} else if (++tries > 20) {
-								clearInterval(interval);
-							}
-						}, 100);
-					}
-				});
-			</script>
-	</body>
+        <!-- Contenedor de notificaciones -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <script type="module" src="/src/scripts/dashboard.js"></script>
+        <script>
+            // Espera a que el módulo dashboard.js cargue y exponga la función
+            window.addEventListener("DOMContentLoaded", function () {
+                // Reintenta hasta que la función esté disponible
+                let tries = 0;
+                const interval = setInterval(function () {
+                    // Busca la función en los módulos importados
+                    if (window.handleDelete || window.deleteTask) {
+                        window.deleteTask =
+                            window.handleDelete || window.deleteTask;
+                        clearInterval(interval);
+                        console.log(
+                            "[dashboard.astro] window.deleteTask asignada:",
+                            window.deleteTask
+                        );
+                    }
+                    if (++tries > 30) {
+                        clearInterval(interval);
+                        console.warn(
+                            "[dashboard.astro] No se pudo asignar window.deleteTask"
+                        );
+                    }
+                }, 100);
+            });
+        </script>
+        <script>
+            // Espera a que el DOM y dashboard.js estén listos
+            window.addEventListener("DOMContentLoaded", function () {
+                // Espera a que dashboard.js exponga deleteTask en window
+                if (window.deleteTask) {
+                    window.handleDelete = window.deleteTask;
+                } else {
+                    // Si no está disponible aún, reintenta hasta que lo esté
+                    let tries = 0;
+                    const interval = setInterval(function () {
+                        if (window.deleteTask) {
+                            window.handleDelete = window.deleteTask;
+                            clearInterval(interval);
+                        } else if (++tries > 20) {
+                            clearInterval(interval);
+                        }
+                    }, 100);
+                }
+            });
+        </script>
+
+        <!-- Modal de confirmación para eliminar tareas -->
+        <ConfirmModal
+            id="deleteTaskModal"
+            title="Eliminar tarea"
+            message="¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer."
+            confirmText="Eliminar"
+            cancelText="Cancelar"
+        />
+    </body>
 </html>
