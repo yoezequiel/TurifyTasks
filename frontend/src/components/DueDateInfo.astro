@@ -12,10 +12,24 @@ const {
   compact = false 
 } = Astro.props;
 
+// Función para normalizar strings de fecha (consistente con tasks.js)
+const normalizeDateString = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  
+  let normalizedDateStr = dateStr;
+  
+  // Si es una fecha YYYY-MM-DD (sin hora), agregar T00:00:00 para evitar problemas de zona horaria
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDateStr)) {
+    normalizedDateStr += 'T00:00:00';
+  }
+  
+  return new Date(normalizedDateStr);
+};
+
 // Función para calcular tiempo restante y estado
 const getDueDateInfo = (dueDateStr: string) => {
   const now = new Date();
-  const dueDate = new Date(dueDateStr);
+  const dueDate = normalizeDateString(dueDateStr);
   
   // Verificar si es una fecha válida
   if (isNaN(dueDate.getTime())) {
