@@ -22,7 +22,7 @@
 Convertir el sidebar estático en un menú hamburguesa completamente funcional para dispositivos móviles, manteniendo la funcionalidad desktop intacta y siguiendo principios mobile-first.
 
 ### Características Implementadas
-- ✅ **Menú hamburguesa animado** (☰ → ✕)
+- ✅ **Menú hamburguesa animado** (☰)
 - ✅ **Sidebar deslizable** desde la izquierda
 - ✅ **Overlay semi-transparente** con click-to-close
 - ✅ **Navegación por teclado** (Escape para cerrar)
