@@ -1,3 +1,5 @@
+// Variable para guardar el total de tareas pendientes iniciales por filtro
+let initialPendingCount = {};
 // Crear o editar tarea
 export async function submitTask(taskData) {
   if (!taskData.title || !taskData.title.trim()) throw new Error('El título es obligatorio');
@@ -101,10 +103,13 @@ export function filterTasks(filterType) {
 }
 
 export function renderTasks() {
+
   const container = document.getElementById('tasksContainer');
   if (!container) return;
   const today = new Date().toDateString();
   let filteredTasks = [];
+  console.log('[renderTasks] currentFilter:', currentFilter);
+  // 1. Filtrar por tipo principal
   switch (currentFilter) {
     case 'inbox':
       filteredTasks = allTasks.filter(task => !task.completed);
@@ -130,10 +135,48 @@ export function renderTasks() {
     default:
       filteredTasks = allTasks;
   }
+  console.log('[renderTasks] after filter main:', filteredTasks.length);
+  // 2. Filtrar por prioridad si está seleccionada
+  if (priorityFilter) {
+    filteredTasks = filteredTasks.filter(task => {
+      if (priorityFilter === 'high') return task.priority === 'high' || task.priority === 'alta';
+      if (priorityFilter === 'medium') return task.priority === 'medium' || task.priority === 'media';
+      if (priorityFilter === 'low') return task.priority === 'low' || task.priority === 'baja';
+      return true;
+    });
+    console.log('[renderTasks] after priorityFilter:', filteredTasks.length);
+  }
+  // 3. Filtrar por término de búsqueda si hay texto
+  if (searchTerm) {
+    filteredTasks = filteredTasks.filter(task => {
+      const title = (task.title || '').toLowerCase();
+      const desc = (task.description || '').toLowerCase();
+      return title.includes(searchTerm) || desc.includes(searchTerm);
+    });
+    console.log('[renderTasks] after searchTerm:', filteredTasks.length);
+  }
+  // ...existing code...
   const taskCounter = document.getElementById('taskCounter');
-  const completedCount = filteredTasks.filter(task => task.completed).length;
+  const progressFilters = ['inbox', 'today', 'upcoming'];
   if (taskCounter) {
-    taskCounter.textContent = `${completedCount}/${filteredTasks.length}`;
+    if (progressFilters.includes(currentFilter)) {
+      if (initialPendingCount[currentFilter] === undefined || initialPendingCount[currentFilter] === null) {
+        initialPendingCount[currentFilter] = filteredTasks.length;
+      }
+      if (filteredTasks.length > initialPendingCount[currentFilter]) {
+        initialPendingCount[currentFilter] = filteredTasks.length;
+      }
+      if (filteredTasks.length === 0) {
+        initialPendingCount[currentFilter] = 0;
+      }
+      const completed = initialPendingCount[currentFilter] - filteredTasks.length;
+      const total = initialPendingCount[currentFilter];
+      taskCounter.textContent = `${completed}/${total}`;
+    } else {
+      const total = filteredTasks.length;
+      const completed = filteredTasks.filter(task => task.completed).length;
+      taskCounter.textContent = `${completed}/${total}`;
+    }
   }
   if (filteredTasks.length === 0) {
     container.innerHTML = `
@@ -249,11 +292,20 @@ export async function deleteTask(taskId) {
   }
 }
 
-export function handleSearch(searchTerm) {
+
+export let searchTerm = '';
+export let priorityFilter = '';
+
+export function handleSearch(term) {
+  searchTerm = term.trim().toLowerCase();
+  console.log('[handleSearch] searchTerm:', searchTerm);
   renderTasks();
 }
 
 export function handlePriorityFilter() {
+  const select = document.getElementById('priorityFilter');
+  priorityFilter = select ? select.value : '';
+  console.log('[handlePriorityFilter] priorityFilter:', priorityFilter);
   renderTasks();
 }
 

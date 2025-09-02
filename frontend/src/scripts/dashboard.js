@@ -4,12 +4,16 @@ import { checkAuthentication, updateUserUI, logout } from './auth.js';
 import { loadTasks, updateTaskCounts, filterTasks, renderTasks, handleSearch, handlePriorityFilter, refreshTasks, toggleTask, deleteTask, submitTask } from './tasks.js';
 import { showToast } from './ui.js';
 
+
 window.filterTasks = filterTasks;
 window.toggleTask = toggleTask;
 window.logout = logout;
 window.showToast = showToast;
 window.submitTask = submitTask;
 window.handleDelete = deleteTask;
+window.handleSearch = handleSearch;
+window.handlePriorityFilter = handlePriorityFilter;
+window.refreshTasks = refreshTasks;
 
 // Inicialización
 window.addEventListener('DOMContentLoaded', () => {
