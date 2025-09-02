@@ -6,7 +6,8 @@ import {
     deleteTask,
     getTaskStats,
     getTasksByPriority,
-    getOverdueTasks
+    getOverdueTasks,
+    getOrphanedTasks
 } from '../controllers/taskController.js';
 import { isAuthenticated } from '../middleware/authMiddleware.js';
 
@@ -25,5 +26,6 @@ router.delete('/:id', deleteTask);              // DELETE /api/tasks/:id
 router.get('/stats', getTaskStats);             // GET /api/tasks/stats
 router.get('/priority/:priority', getTasksByPriority); // GET /api/tasks/priority/:priority
 router.get('/overdue', getOverdueTasks);        // GET /api/tasks/overdue
+router.get('/orphaned', getOrphanedTasks);      // GET /api/tasks/orphaned
 
 export default router;

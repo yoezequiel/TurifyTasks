@@ -314,7 +314,40 @@ export const getTasksByPriority = async (req, res) => {
     }
 };
 
-// GET /api/tasks/overdue - Obtener tareas vencidas
+// GET /api/tasks/orphaned - Obtener tareas sin lista asignada
+export const getOrphanedTasks = async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        
+        const result = await db.execute({
+            sql: `SELECT 
+                    t.id, 
+                    t.title, 
+                    t.description, 
+                    t.due_date, 
+                    t.priority, 
+                    t.completed, 
+                    t.list_id,
+                    t.created_at, 
+                    t.updated_at
+                  FROM tasks t 
+                  WHERE t.user_id = ? AND t.list_id IS NULL
+                  ORDER BY t.created_at DESC`,
+            args: [userId]
+        });
+
+        res.json({
+            success: true,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error al obtener tareas sin lista:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
 export const getOverdueTasks = async (req, res) => {
     try {
         const userId = req.session.user.id;

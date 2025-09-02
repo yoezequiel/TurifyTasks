@@ -7,6 +7,7 @@ import { initializeDatabase } from './db.js';
 import session from 'express-session';
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
+import taskListRoutes from './routes/task-lists.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -35,6 +36,7 @@ app.use(session({
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/task-lists', taskListRoutes);
 
 // Middleware de manejo de errores
 app.use((err, _req, res, _next) => {
