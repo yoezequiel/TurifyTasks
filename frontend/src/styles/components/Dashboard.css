@@ -607,3 +607,145 @@ body {
 		padding: 2.5rem;
 	}
 }
+
+/* Estilos para información de fecha límite en task-card */
+.task-card .due-date-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.5rem;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	background: var(--muted, #f8fafc);
+	border: 1px solid var(--border, #e2e8f0);
+	margin-top: 0.5rem;
+}
+
+.task-card .due-date-main {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.task-card .due-date-icon {
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.task-card .due-date-text {
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.task-card .due-date-label {
+	font-size: 0.75rem;
+	color: var(--muted-foreground, #64748b);
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.025em;
+}
+
+.task-card .due-date-value {
+	font-weight: 600;
+	color: var(--foreground, #1e293b);
+}
+
+.task-card .time-remaining {
+	display: flex;
+	align-items: center;
+	padding-left: 1.5rem;
+}
+
+.task-card .time-remaining-text {
+	font-size: 0.75rem;
+	font-weight: 500;
+}
+
+/* Estados de urgencia para task-card */
+.task-card .due-date-container.overdue {
+	background: rgba(239, 68, 68, 0.05);
+	border-color: rgba(239, 68, 68, 0.2);
+}
+
+.task-card .due-date-container.overdue .time-remaining-text {
+	color: #dc2626;
+	font-weight: 700;
+}
+
+.task-card .due-date-container.critical {
+	background: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.3);
+	animation: pulse-urgent 2s infinite;
+}
+
+.task-card .due-date-container.critical .time-remaining-text {
+	color: #dc2626;
+	font-weight: 700;
+}
+
+.task-card .due-date-container.today {
+	background: rgba(245, 158, 11, 0.05);
+	border-color: rgba(245, 158, 11, 0.2);
+}
+
+.task-card .due-date-container.today .time-remaining-text {
+	color: #d97706;
+	font-weight: 600;
+}
+
+.task-card .due-date-container.tomorrow {
+	background: rgba(34, 197, 94, 0.05);
+	border-color: rgba(34, 197, 94, 0.2);
+}
+
+.task-card .due-date-container.tomorrow .time-remaining-text {
+	color: #16a34a;
+	font-weight: 600;
+}
+
+.task-card .due-date-container.this-week {
+	background: rgba(59, 130, 246, 0.05);
+	border-color: rgba(59, 130, 246, 0.2);
+}
+
+.task-card .due-date-container.this-week .time-remaining-text {
+	color: #2563eb;
+}
+
+.task-card .due-date-container.future {
+	background: var(--muted, #f8fafc);
+	border-color: var(--border, #e2e8f0);
+}
+
+.task-card .due-date-container.future .time-remaining-text {
+	color: var(--muted-foreground, #64748b);
+}
+
+/* Animación para tareas críticas */
+@keyframes pulse-urgent {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+	}
+}
+
+/* Indicador visual adicional en el borde de la tarjeta */
+.task-card:has(.due-date-container.overdue) {
+	border-left: 3px solid #dc2626;
+}
+
+.task-card:has(.due-date-container.critical) {
+	border-left: 3px solid #dc2626;
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+}
+
+.task-card:has(.due-date-container.today) {
+	border-left: 3px solid #d97706;
+}
+
+.task-card:has(.due-date-container.tomorrow) {
+	border-left: 3px solid #16a34a;
+}
