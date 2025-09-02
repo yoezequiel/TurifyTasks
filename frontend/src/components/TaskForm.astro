@@ -19,6 +19,9 @@ const { id = 'taskForm' } = Astro.props;
     </div>
     
     <form id="taskFormElement" class="task-form-body">
+      <!-- Campo oculto para el ID de edición -->
+      <input type="hidden" id="taskId" name="id" />
+      
       <div class="form-group">
         <label for="taskTitle" class="form-label">Título *</label>
         <input 
@@ -327,6 +330,10 @@ const { id = 'taskForm' } = Astro.props;
 
       if (taskData && mode === 'edit') {
         fillFormWithTaskData(taskData);
+      } else {
+        // Limpiar el ID si es modo creación
+        const taskIdInput = document.getElementById('taskId') as HTMLInputElement;
+        if (taskIdInput) taskIdInput.value = '';
       }
       
       if (modal) {
@@ -351,11 +358,13 @@ const { id = 'taskForm' } = Astro.props;
     function fillFormWithTaskData(task: Task): void {
       if (!task) return;
       
+      const taskIdInput = document.getElementById('taskId') as HTMLInputElement;
       const titleInput = document.getElementById('taskTitle') as HTMLInputElement;
       const descInput = document.getElementById('taskDescription') as HTMLTextAreaElement;
       const dueDateInput = document.getElementById('taskDueDate') as HTMLInputElement;
       const prioritySelect = document.getElementById('taskPriority') as HTMLSelectElement;
       
+      if (taskIdInput) taskIdInput.value = (task as any)._id || task.id || '';
       if (titleInput) titleInput.value = task.title || '';
       if (descInput) descInput.value = task.description || '';
       if (dueDateInput) dueDateInput.value = task.due_date || '';

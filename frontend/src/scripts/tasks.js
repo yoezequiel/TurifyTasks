@@ -4,10 +4,12 @@ let initialPendingCount = {};
 export async function submitTask(taskData) {
   if (!taskData.title || !taskData.title.trim()) throw new Error('El título es obligatorio');
   const isEdit = !!taskData.id;
+  console.log('[submitTask] isEdit:', isEdit, 'taskData:', taskData);
   const url = isEdit
     ? `http://localhost:3000/api/tasks/${taskData.id}`
     : 'http://localhost:3000/api/tasks';
   const method = isEdit ? 'PUT' : 'POST';
+  console.log('[submitTask] URL:', url, 'Method:', method);
   try {
     const response = await fetch(url, {
       method,
@@ -15,11 +17,15 @@ export async function submitTask(taskData) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(taskData)
     });
+    console.log('[submitTask] Response status:', response.status);
     if (response.ok) {
+      const responseData = await response.json();
+      console.log('[submitTask] Response data:', responseData);
       await loadTasks();
       showToast(isEdit ? 'Tarea actualizada' : 'Tarea creada', 'success');
     } else {
       const errorData = await response.json();
+      console.error('[submitTask] Error response:', errorData);
       throw new Error(errorData.message || 'Error al guardar tarea');
     }
   } catch (error) {
@@ -34,8 +40,27 @@ export let allTasks = [];
 export let currentFilter = 'inbox';
 
 export function getTaskDate(task) {
-  const dateStr = task.dueDate || task.due_date || task.createdAt || task.created_at;
-  return dateStr ? new Date(dateStr) : new Date();
+  let dateStr = task.dueDate || task.due_date || task.createdAt || task.created_at;
+  console.log('[getTaskDate] Tarea:', task.title, 'Campos de fecha:', {
+    dueDate: task.dueDate,
+    due_date: task.due_date,
+    createdAt: task.createdAt,
+    created_at: task.created_at,
+    selectedDate: dateStr
+  });
+  
+  if (!dateStr) {
+    return new Date();
+  }
+  
+  // Si es una fecha YYYY-MM-DD (sin hora), agregar T00:00:00 para evitar problemas de zona horaria
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    dateStr += 'T00:00:00';
+  }
+  
+  const date = new Date(dateStr);
+  console.log(`[getTaskDate] Fecha procesada: ${dateStr} -> ${date}`);
+  return date;
 }
 
 export async function loadTasks() {
@@ -50,6 +75,12 @@ export async function loadTasks() {
     if (response.ok) {
       const data = await response.json();
       allTasks = data.data || [];
+      
+      // Establecer filtro inicial si no está establecido
+      if (!currentFilter) {
+        currentFilter = 'inbox';
+      }
+      
       updateTaskCounts();
       renderTasks();
     } else {
@@ -87,9 +118,16 @@ export function updateTaskCounts() {
 
 export function filterTasks(filterType) {
   currentFilter = filterType;
+  
+  // Remover clase activa de todos los items del sidebar
   document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
-  const activeItem = document.querySelector(`[onclick="filterTasks('${filterType}')"]`);
-  if (activeItem) activeItem.classList.add('active');
+  
+  // Añadir clase activa al item seleccionado usando data-filter
+  const activeItem = document.querySelector(`[data-filter="${filterType}"]`);
+  if (activeItem) {
+    activeItem.classList.add('active');
+  }
+  
   const titles = {
     inbox: 'Bandeja de entrada',
     today: 'Tareas de hoy',
@@ -115,9 +153,15 @@ export function renderTasks() {
       filteredTasks = allTasks.filter(task => !task.completed);
       break;
     case 'today':
+      const todayDate = new Date();
+      const todayStr = todayDate.toDateString();
+      console.log('[renderTasks] Filtro today - fecha de hoy:', todayStr);
       filteredTasks = allTasks.filter(task => {
-        const taskDate = getTaskDate(task).toDateString();
-        return taskDate === today && !task.completed;
+        const taskDate = getTaskDate(task);
+        const taskDateStr = taskDate.toDateString();
+        const matches = taskDateStr === todayStr && !task.completed;
+        console.log('[renderTasks] Tarea:', task.title, 'Fecha tarea:', taskDateStr, 'Coincide:', matches, 'Completada:', task.completed);
+        return matches;
       });
       break;
     case 'upcoming':
@@ -136,6 +180,10 @@ export function renderTasks() {
       filteredTasks = allTasks;
   }
   console.log('[renderTasks] after filter main:', filteredTasks.length);
+  
+  // Guardar cantidad base antes de filtros adicionales
+  const baseFilteredTasks = [...filteredTasks];
+  
   // 2. Filtrar por prioridad si está seleccionada
   if (priorityFilter) {
     filteredTasks = filteredTasks.filter(task => {
@@ -155,27 +203,36 @@ export function renderTasks() {
     });
     console.log('[renderTasks] after searchTerm:', filteredTasks.length);
   }
-  // ...existing code...
+  
+  // Contador contextual inteligente
   const taskCounter = document.getElementById('taskCounter');
   const progressFilters = ['inbox', 'today', 'upcoming'];
+  const hasAdditionalFilters = priorityFilter || searchTerm;
+  
   if (taskCounter) {
-    if (progressFilters.includes(currentFilter)) {
-      if (initialPendingCount[currentFilter] === undefined || initialPendingCount[currentFilter] === null) {
-        initialPendingCount[currentFilter] = filteredTasks.length;
-      }
-      if (filteredTasks.length > initialPendingCount[currentFilter]) {
-        initialPendingCount[currentFilter] = filteredTasks.length;
-      }
-      if (filteredTasks.length === 0) {
-        initialPendingCount[currentFilter] = 0;
-      }
-      const completed = initialPendingCount[currentFilter] - filteredTasks.length;
-      const total = initialPendingCount[currentFilter];
-      taskCounter.textContent = `${completed}/${total}`;
+    if (hasAdditionalFilters) {
+      // Con filtros adicionales: mostrar "X resultados de Y"
+      taskCounter.textContent = `${filteredTasks.length} de ${baseFilteredTasks.length}`;
     } else {
-      const total = filteredTasks.length;
-      const completed = filteredTasks.filter(task => task.completed).length;
-      taskCounter.textContent = `${completed}/${total}`;
+      // Sin filtros adicionales: mostrar contador normal
+      if (progressFilters.includes(currentFilter)) {
+        if (initialPendingCount[currentFilter] === undefined || initialPendingCount[currentFilter] === null) {
+          initialPendingCount[currentFilter] = filteredTasks.length;
+        }
+        if (filteredTasks.length > initialPendingCount[currentFilter]) {
+          initialPendingCount[currentFilter] = filteredTasks.length;
+        }
+        if (filteredTasks.length === 0) {
+          initialPendingCount[currentFilter] = 0;
+        }
+        const completed = initialPendingCount[currentFilter] - filteredTasks.length;
+        const total = initialPendingCount[currentFilter];
+        taskCounter.textContent = `${completed}/${total}`;
+      } else {
+        const total = filteredTasks.length;
+        const completed = filteredTasks.filter(task => task.completed).length;
+        taskCounter.textContent = `${completed}/${total}`;
+      }
     }
   }
   if (filteredTasks.length === 0) {
@@ -195,7 +252,7 @@ export function renderTasks() {
     const priorityClass = getPriorityClass(task.priority);
     return `
       <div class="task-card ${isCompleted}">
-        <button class="task-checkbox" onclick="toggleTask('${taskId}')">
+        <button class="task-checkbox js-toggle-task" data-task-id="${taskId}">
           ${checkIcon}
         </button>
         <div class="task-content">
@@ -206,7 +263,7 @@ export function renderTasks() {
           </div>
         </div>
         <div class="task-actions">
-          <button class="edit-btn" onclick="window.showTaskForm && window.showTaskForm('edit', JSON.parse('${JSON.stringify(task).replace(/\"/g, '&quot;').replace(/'/g, '&#39;')}'))">✏️</button>
+          <button class="edit-btn js-edit-task" data-task='${JSON.stringify(task).replace(/\"/g, '&quot;').replace(/'/g, '&#39;')}'>✏️</button>
           <button class="delete-btn js-delete-task" data-task-id="${taskId}">🗑️</button>
         </div>
       </div>

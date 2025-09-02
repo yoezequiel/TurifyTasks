@@ -27,7 +27,7 @@ import TaskForm from '../components/TaskForm.astro';
 						<div class="user-avatar" id="userAvatar">U</div>
 						<span id="userEmail">Cargando...</span>
 					</div>
-					<button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+					<button class="logout-btn" id="logoutBtn">Cerrar sesión</button>
 				</div>
 			</div>
 		</header>
@@ -41,31 +41,31 @@ import TaskForm from '../components/TaskForm.astro';
 				</div>
 				
 				<nav class="sidebar-nav">
-					<button class="sidebar-item active" onclick="filterTasks('inbox')">
+					<button class="sidebar-item active" data-filter="inbox">
 						<div class="sidebar-item-content">
 							<span>📥 Bandeja de entrada</span>
 							<span class="sidebar-item-count" id="inboxCount">0</span>
 						</div>
 					</button>
-					<button class="sidebar-item" onclick="filterTasks('today')">
+					<button class="sidebar-item" data-filter="today">
 						<div class="sidebar-item-content">
 							<span>📅 Hoy</span>
 							<span class="sidebar-item-count" id="todayCount">0</span>
 						</div>
 					</button>
-					<button class="sidebar-item" onclick="filterTasks('upcoming')">
+					<button class="sidebar-item" data-filter="upcoming">
 						<div class="sidebar-item-content">
 							<span>📋 Próximas</span>
 							<span class="sidebar-item-count" id="upcomingCount">0</span>
 						</div>
 					</button>
-					<button class="sidebar-item" onclick="filterTasks('important')">
+					<button class="sidebar-item" data-filter="important">
 						<div class="sidebar-item-content">
 							<span>⭐ Importantes</span>
 							<span class="sidebar-item-count" id="importantCount">0</span>
 						</div>
 					</button>
-					<button class="sidebar-item" onclick="filterTasks('completed')">
+					<button class="sidebar-item" data-filter="completed">
 						<div class="sidebar-item-content">
 							<span>✅ Completadas</span>
 							<span class="sidebar-item-count" id="completedCount">0</span>
@@ -89,9 +89,8 @@ import TaskForm from '../components/TaskForm.astro';
 							class="search-input" 
 							placeholder="🔍 Buscar tareas..." 
 							id="searchInput"
-							onkeyup="handleSearch(this.value)"
 						>
-						<select class="filter-select" id="priorityFilter" onchange="handlePriorityFilter()">
+						<select class="filter-select" id="priorityFilter">
 							<option value="">Todas las prioridades</option>
 							<option value="high">🔴 Alta prioridad</option>
 							<option value="medium">🟡 Prioridad media</option>
@@ -102,10 +101,10 @@ import TaskForm from '../components/TaskForm.astro';
 
 				<!-- Acciones -->
 				<div class="actions-section">
-					<button class="action-btn primary" onclick="window.showTaskForm && window.showTaskForm('create')">
+					<button class="action-btn primary" id="newTaskBtn">
 						➕ Nueva Tarea
 					</button>
-					<button class="action-btn secondary" onclick="refreshTasks()">
+					<button class="action-btn secondary" id="refreshBtn">
 						🔄 Actualizar
 					</button>
 				</div>
