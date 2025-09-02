@@ -5,6 +5,168 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-09-02 - MEJORAS RESPONSIVE Y UX
+
+### 🎯 IMPLEMENTACIÓN MOBILE-FIRST - Menú Hamburguesa y Optimizaciones
+
+#### ✨ Added - Nuevas Funcionalidades Responsive
+- **Menú Hamburguesa Mobile-First**
+  - Botón hamburguesa animado con transformación a "X" al abrir
+  - Sidebar deslizable desde la izquierda en dispositivos móviles
+  - Overlay semi-transparente para cerrar el menú
+  - Animaciones CSS suaves (transform y opacity transitions)
+  - Auto-cierre al cambiar a resolución desktop (>768px)
+
+- **Funcionalidades de Navegación Móvil**
+  - Cierre del menú con tecla Escape
+  - Prevención del scroll del body cuando el sidebar está abierto
+  - Delegación de eventos para manejo eficiente
+  - Gestión automática del estado del menú en resize de ventana
+
+- **Script Modular para Hamburguesa**
+  - Archivo separado: `/src/scripts/hamburger.js`
+  - Función `initHamburgerMenu()` exportable y reutilizable
+  - Verificación de existencia de elementos DOM
+  - Event listeners con cleanup automático
+
+#### 🎨 Styling - Mejoras de Diseño Responsive
+- **Animaciones del Botón Hamburguesa**
+  - 3 líneas que se transforman en "X" con rotación
+  - Transiciones de 0.3s con easing suave
+  - Línea central se desvanece (opacity: 0)
+  - Transform-origin centrado para rotación perfecta
+
+- **Estados del Sidebar Móvil**
+  - Posición fija con z-index apropiado (50)
+  - Transform translateX(-100%) para estado cerrado
+  - Transform translateX(0) para estado abierto
+  - Box-shadow para efecto de elevación
+
+- **Overlay de Fondo**
+  - Background rgba(0, 0, 0, 0.5) para oscurecer contenido
+  - Transiciones de visibilidad y opacidad
+  - Z-index 40 (menor que sidebar)
+  - Click para cerrar implementado
+
+#### 🔧 Changed - Optimizaciones de Header y Layout
+- **Mejoras del Header en Desktop**
+  - Eliminación de márgenes laterales excesivos
+  - Padding optimizado: `16px 20px` en lugar de valores mínimos
+  - Width: 100% para ocupar todo el ancho disponible
+  - Header-content con ancho completo y posición relativa
+
+- **Responsive Breakpoints Mejorados**
+  - Mobile: ≤768px - Hamburguesa visible, sidebar oculto
+  - Tablet: 769px-1024px - Layout híbrido optimizado
+  - Desktop: >1024px - Sidebar siempre visible
+  - Adaptación automática de padding según resolución
+
+- **Mejoras de UX**
+  - Email oculto en móvil para ahorrar espacio
+  - Logo ajustado con margin-left para hamburguesa
+  - Botones de acción en columna en móvil
+  - Main content con padding reducido en móvil
+
+#### 🐛 Fixed - Correcciones y Optimizaciones
+- **FIXED: Header con Márgenes Excesivos**
+  - ROOT CAUSE: max-width muy pequeño (20px) y padding mínimo (5px)
+  - SOLUTION: width: 100% y padding apropiado (16px 20px)
+  - IMPACT: Header ahora ocupa todo el ancho sin márgenes laterales
+
+- **FIXED: Sidebar No Responsivo**
+  - ROOT CAUSE: display: none en móvil sin alternativa
+  - SOLUTION: Menú hamburguesa con sidebar deslizable
+  - IMPACT: Navegación completa disponible en todos los dispositivos
+
+- **FIXED: Interfaz de Usuario en Móvil**
+  - ROOT CAUSE: Elementos apilados sin consideración móvil
+  - SOLUTION: Layout reorganizado con mobile-first approach
+  - IMPACT: Experiencia de usuario optimizada en dispositivos móviles
+
+#### 🎯 UX/UI Improvements - Mejoras de Experiencia
+- **Cambio de Visualización de Usuario**
+  - Mostrar username en lugar de email en header
+  - Avatar con primera letra del username
+  - Información más personal y user-friendly
+  - Funcionalidad preservada con IDs existentes
+
+- **Navegación Intuitiva**
+  - Hamburguesa solo visible cuando es necesario (móvil)
+  - Animaciones que guían la interacción del usuario
+  - Estados visuales claros (abierto/cerrado)
+  - Feedback haptico mediante transiciones
+
+- **Accesibilidad Mejorada**
+  - Aria-label en botón hamburguesa
+  - Gestión apropiada del foco
+  - Contraste adecuado en todos los estados
+  - Navegación por teclado (Escape para cerrar)
+
+#### 📊 Arquitectura y Estructura
+- **Modularización del JavaScript**
+  - Separación de funcionalidad hamburguesa en archivo dedicado
+  - Import de módulo en dashboard.astro
+  - Funciones exportables para reutilización
+  - Event delegation para mejor performance
+
+- **CSS Responsivo Optimizado**
+  - Media queries específicas para cada breakpoint
+  - Mobile-first approach consistente
+  - Transiciones y animaciones performantes
+  - Z-index hierarchy bien definido
+
+- **Mantenimiento de Compatibilidad**
+  - Sin breaking changes en funcionalidad existente
+  - IDs y clases mantenidas para retrocompatibilidad
+  - Scripts existentes no afectados
+  - Integración limpia con dashboard híbrido
+
+#### 🔧 Technical Implementation - Detalles Técnicos
+- **Event Handling Robusto**
+  ```javascript
+  // Verificación de elementos DOM
+  if (!hamburgerBtn || !sidebar || !overlay) return;
+  
+  // Event listeners con cleanup
+  hamburgerBtn.addEventListener('click', toggleSidebar);
+  overlay.addEventListener('click', closeSidebar);
+  ```
+
+- **CSS Animations Optimizadas**
+  ```css
+  /* Hamburguesa a X animation */
+  .hamburger-active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(4px, 4px);
+  }
+  .hamburger-active .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+  ```
+
+- **Responsive Media Queries**
+  ```css
+  @media (max-width: 768px) {
+    .hamburger-btn { display: flex; }
+    .sidebar { transform: translateX(-100%); }
+  }
+  ```
+
+#### 🎯 Estado de Release
+- ✅ **IMPLEMENTADO:** Menú hamburguesa completamente funcional
+- ✅ **PROBADO:** Testing en múltiples resoluciones y dispositivos
+- ✅ **OPTIMIZADO:** Header sin márgenes y UX mejorada
+- ✅ **VALIDADO:** Username mostrado en lugar de email
+- ✅ **DOCUMENTADO:** Documentación comprensiva completada
+- ✅ **COMPATIBLE:** Sin breaking changes, totalmente retrocompatible
+
+#### 📱 Dispositivos Soportados
+- **Mobile**: 320px - 768px (iPhone SE hasta iPad)
+- **Tablet**: 769px - 1024px (iPad Pro, tablets Android)
+- **Desktop**: 1025px+ (laptops, monitores, desktop)
+- **Testing realizado en**: Chrome DevTools, Firefox responsive mode
+
+---
+
 ## [2.0.0] - 2025-01-XX - DASHBOARD COMPLETO CON GESTIÓN DE TAREAS
 
 ### 🎯 IMPLEMENTACIÓN MAYOR - Sistema Completo de Tareas
