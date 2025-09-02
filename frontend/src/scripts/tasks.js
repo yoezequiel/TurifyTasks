@@ -250,6 +250,10 @@ export function renderTasks() {
     const checkIcon = task.completed ? '✓' : '';
     const priorityText = getPriorityText(task.priority);
     const priorityClass = getPriorityClass(task.priority);
+    
+    // Generar información de fecha límite
+    const dueDateHtml = getDueDateHtml(task.due_date || task.dueDate);
+    
     return `
       <div class="task-card ${isCompleted}">
         <button class="task-checkbox js-toggle-task" data-task-id="${taskId}">
@@ -261,6 +265,7 @@ export function renderTasks() {
           <div class="task-meta">
             <span class="priority-badge ${priorityClass}">${priorityText}</span>
           </div>
+          ${dueDateHtml}
         </div>
         <div class="task-actions">
           <button class="edit-btn js-edit-task" data-task='${JSON.stringify(task).replace(/\"/g, '&quot;').replace(/'/g, '&#39;')}'>✏️</button>
@@ -369,4 +374,101 @@ export function handlePriorityFilter() {
 export function refreshTasks() {
   loadTasks();
   showToast('Tareas actualizadas', 'success');
+}
+
+// Funciones utilitarias para fechas límite
+function getDueDateInfo(dueDateStr) {
+  if (!dueDateStr) return null;
+  
+  const now = new Date();
+  const dueDate = new Date(dueDateStr);
+  
+  // Verificar si es una fecha válida
+  if (isNaN(dueDate.getTime())) {
+    return null;
+  }
+  
+  const diffInMs = dueDate.getTime() - now.getTime();
+  const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+  const diffInHours = Math.ceil(diffInMs / (1000 * 60 * 60));
+  const diffInMinutes = Math.ceil(diffInMs / (1000 * 60));
+  
+  let status = '';
+  let timeText = '';
+  let icon = '📅';
+  let urgencyClass = '';
+  
+  if (diffInMs < 0 && Math.abs(diffInDays) > 0) {
+    // Vencida (solo si ha pasado al menos un día completo)
+    const overdueDays = Math.abs(diffInDays);
+    status = 'overdue';
+    icon = '⚠️';
+    urgencyClass = 'overdue';
+    timeText = `Vencida hace ${overdueDays} ${overdueDays === 1 ? 'día' : 'días'}`;
+  } else if (diffInDays === 0 || (diffInMs < 0 && Math.abs(diffInDays) === 0)) {
+    // Hoy (incluye casos donde es el mismo día aunque haya pasado la hora)
+    status = 'today';
+    icon = '🔥';
+    urgencyClass = 'today';
+    timeText = 'Vence hoy';
+  } else if (diffInDays === 1) {
+    // Mañana
+    status = 'tomorrow';
+    icon = '⏰';
+    urgencyClass = 'tomorrow';
+    timeText = 'Vence mañana';
+  } else if (diffInDays <= 7) {
+    // Esta semana
+    status = 'this-week';
+    icon = '📅';
+    urgencyClass = 'this-week';
+    timeText = `Vence en ${diffInDays} días`;
+  } else {
+    // Futuro lejano
+    status = 'future';
+    icon = '🗓️';
+    urgencyClass = 'future';
+    timeText = `Vence en ${diffInDays} días`;
+  }
+  
+  return {
+    status,
+    icon,
+    timeText,
+    urgencyClass,
+    formattedDate: dueDate.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  };
+}
+
+function getDueDateHtml(dueDateStr) {
+  const dueDateInfo = getDueDateInfo(dueDateStr);
+  
+  if (!dueDateInfo) {
+    return '';
+  }
+  
+  return `
+    <div class="due-date-container ${dueDateInfo.urgencyClass}">
+      <div class="due-date-main">
+        <span class="due-date-icon" title="Estado: ${dueDateInfo.status}">
+          ${dueDateInfo.icon}
+        </span>
+        <div class="due-date-text">
+          <span class="due-date-label">Fecha límite:</span>
+          <span class="due-date-value" title="${dueDateInfo.formattedDate}">
+            ${dueDateInfo.formattedDate}
+          </span>
+        </div>
+      </div>
+      <div class="time-remaining ${dueDateInfo.urgencyClass}">
+        <span class="time-remaining-text">
+          ${dueDateInfo.timeText}
+        </span>
+      </div>
+    </div>
+  `;
 }
