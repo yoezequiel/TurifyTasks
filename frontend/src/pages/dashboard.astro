@@ -7,42 +7,81 @@ import ConfirmModal from "../components/ConfirmModal.astro";
 ---
 
 <html lang="es">
-    <head>
-        <meta charset="utf-8" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <meta name="viewport" content="width=device-width" />
-        <meta name="generator" content={Astro.generator} />
-        <title>Dashboard - TurifyTasks</title>
-        <link rel="stylesheet" href="/src/styles/components/Dashboard.css" />
-    </head>
-    <body>
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo">
-                    <div class="logo-icon">✓</div>
-                    <span>TurifyTasks</span>
-                </div>
-                <div class="user-section">
-                    <div class="user-info">
-                        <div class="user-avatar" id="userAvatar">U</div>
-                        <span id="userEmail">Cargando...</span>
-                    </div>
-                    <button class="logout-btn" id="logoutBtn"
-                        >Cerrar sesión</button
-                    >
-                </div>
-            </div>
-        </header>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Dashboard - TurifyTasks</title>
+	<link rel="stylesheet" href="/src/styles/components/Dashboard.css" />
+	</head>
+	<body>
+		<!-- Header -->
+		<header class="header">
+			<div class="header-content">
+				<button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú">
+					<span class="hamburger-line"></span>
+					<span class="hamburger-line"></span>
+					<span class="hamburger-line"></span>
+				</button>
+				<div class="logo">
+					<div class="logo-icon">✓</div>
+					<span>TurifyTasks</span>
+				</div>
+				<div class="user-section">
+					<div class="user-info">
+						<div class="user-avatar" id="userAvatar">U</div>
+						<span id="userEmail">Cargando...</span>
+					</div>
+					<button class="logout-btn" id="logoutBtn">Cerrar sesión</button>
+				</div>
+			</div>
+		</header>
 
-        <div class="dashboard-layout">
-            <!-- Sidebar -->
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <div class="sidebar-title">Filtros</div>
-                    <div class="sidebar-subtitle">Organiza tus tareas</div>
-                </div>
-
+		<div class="dashboard-layout">
+			<!-- Overlay para cerrar sidebar en móvil -->
+			<div class="sidebar-overlay" id="sidebarOverlay"></div>
+			
+			<!-- Sidebar -->
+			<aside class="sidebar" id="sidebar">
+				<div class="sidebar-header">
+					<div class="sidebar-title">Filtros</div>
+					<div class="sidebar-subtitle">Organiza tus tareas</div>
+				</div>
+				
+				<nav class="sidebar-nav">
+					<button class="sidebar-item active" data-filter="inbox">
+						<div class="sidebar-item-content">
+							<span>📥 Bandeja de entrada</span>
+							<span class="sidebar-item-count" id="inboxCount">0</span>
+						</div>
+					</button>
+					<button class="sidebar-item" data-filter="today">
+						<div class="sidebar-item-content">
+							<span>📅 Hoy</span>
+							<span class="sidebar-item-count" id="todayCount">0</span>
+						</div>
+					</button>
+					<button class="sidebar-item" data-filter="upcoming">
+						<div class="sidebar-item-content">
+							<span>📋 Próximas</span>
+							<span class="sidebar-item-count" id="upcomingCount">0</span>
+						</div>
+					</button>
+					<button class="sidebar-item" data-filter="important">
+						<div class="sidebar-item-content">
+							<span>⭐ Importantes</span>
+							<span class="sidebar-item-count" id="importantCount">0</span>
+						</div>
+					</button>
+					<button class="sidebar-item" data-filter="completed">
+						<div class="sidebar-item-content">
+							<span>✅ Completadas</span>
+							<span class="sidebar-item-count" id="completedCount">0</span>
+						</div>
+					</button>
+				</nav>
+			</aside>
                 <nav class="sidebar-nav">
                     <button class="sidebar-item active" data-filter="inbox">
                         <div class="sidebar-item-content">
@@ -149,63 +188,46 @@ import ConfirmModal from "../components/ConfirmModal.astro";
         <!-- Modal de formulario (usa tu componente avanzado) -->
         <TaskForm />
 
-        <!-- Contenedor de notificaciones -->
-        <div class="toast-container" id="toastContainer"></div>
-
-        <script type="module" src="/src/scripts/dashboard.js"></script>
-        <script>
-            // Espera a que el módulo dashboard.js cargue y exponga la función
-            window.addEventListener("DOMContentLoaded", function () {
-                // Reintenta hasta que la función esté disponible
-                let tries = 0;
-                const interval = setInterval(function () {
-                    // Busca la función en los módulos importados
-                    if (window.handleDelete || window.deleteTask) {
-                        window.deleteTask =
-                            window.handleDelete || window.deleteTask;
-                        clearInterval(interval);
-                        console.log(
-                            "[dashboard.astro] window.deleteTask asignada:",
-                            window.deleteTask
-                        );
-                    }
-                    if (++tries > 30) {
-                        clearInterval(interval);
-                        console.warn(
-                            "[dashboard.astro] No se pudo asignar window.deleteTask"
-                        );
-                    }
-                }, 100);
-            });
-        </script>
-        <script>
-            // Espera a que el DOM y dashboard.js estén listos
-            window.addEventListener("DOMContentLoaded", function () {
-                // Espera a que dashboard.js exponga deleteTask en window
-                if (window.deleteTask) {
-                    window.handleDelete = window.deleteTask;
-                } else {
-                    // Si no está disponible aún, reintenta hasta que lo esté
-                    let tries = 0;
-                    const interval = setInterval(function () {
-                        if (window.deleteTask) {
-                            window.handleDelete = window.deleteTask;
-                            clearInterval(interval);
-                        } else if (++tries > 20) {
-                            clearInterval(interval);
-                        }
-                    }, 100);
-                }
-            });
-        </script>
-
-        <!-- Modal de confirmación para eliminar tareas -->
-        <ConfirmModal
-            id="deleteTaskModal"
-            title="Eliminar tarea"
-            message="¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer."
-            confirmText="Eliminar"
-            cancelText="Cancelar"
-        />
-    </body>
+				<script type="module" src="/src/scripts/dashboard.js"></script>
+				<script type="module" src="/src/scripts/hamburger.js"></script>
+				<script>
+					// Espera a que el módulo dashboard.js cargue y exponga la función
+					window.addEventListener('DOMContentLoaded', function() {
+						// Reintenta hasta que la función esté disponible
+						let tries = 0;
+						const interval = setInterval(function() {
+							// Busca la función en los módulos importados
+							if (window.handleDelete || window.deleteTask) {
+								window.deleteTask = window.handleDelete || window.deleteTask;
+								clearInterval(interval);
+								console.log('[dashboard.astro] window.deleteTask asignada:', window.deleteTask);
+							}
+							if (++tries > 30) {
+								clearInterval(interval);
+								console.warn('[dashboard.astro] No se pudo asignar window.deleteTask');
+							}
+						}, 100);
+					});
+				</script>
+			<script>
+				// Espera a que el DOM y dashboard.js estén listos
+				window.addEventListener('DOMContentLoaded', function() {
+					// Espera a que dashboard.js exponga deleteTask en window
+					if (window.deleteTask) {
+						window.handleDelete = window.deleteTask;
+					} else {
+						// Si no está disponible aún, reintenta hasta que lo esté
+						let tries = 0;
+						const interval = setInterval(function() {
+							if (window.deleteTask) {
+								window.handleDelete = window.deleteTask;
+								clearInterval(interval);
+							} else if (++tries > 20) {
+								clearInterval(interval);
+							}
+						}, 100);
+					}
+				});
+			</script>
+	</body>
 </html>
