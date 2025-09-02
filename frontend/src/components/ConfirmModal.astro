@@ -1,0 +1,287 @@
+---
+export interface Props {
+    id: string;
+    title?: string;
+    message?: string;
+    confirmText?: string;
+    cancelText?: string;
+}
+
+const {
+    id,
+    title = "Confirmar acción",
+    message = "¿Estás seguro de que quieres realizar esta acción?",
+    confirmText = "Confirmar",
+    cancelText = "Cancelar",
+} = Astro.props;
+---
+
+<div id={id} class="confirm-modal-overlay" style="display: none;">
+    <div class="confirm-modal">
+        <div class="confirm-modal-header">
+            <h3 class="confirm-modal-title">{title}</h3>
+        </div>
+
+        <div class="confirm-modal-body">
+            <p class="confirm-modal-message">{message}</p>
+        </div>
+
+        <div class="confirm-modal-footer">
+            <button
+                type="button"
+                class="confirm-modal-button confirm-modal-cancel"
+                data-action="cancel">
+                {cancelText}
+            </button>
+            <button
+                type="button"
+                class="confirm-modal-button confirm-modal-confirm"
+                data-action="confirm">
+                {confirmText}
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .confirm-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(3px);
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    .confirm-modal-overlay.show {
+        display: flex !important;
+        opacity: 1;
+    }
+
+    .confirm-modal-overlay.hide {
+        opacity: 0;
+    }
+
+    .confirm-modal {
+        background: var(--white, #ffffff);
+        border-radius: var(--radius-lg, 12px);
+        box-shadow: var(--shadow-hover, 0 8px 32px rgba(0, 0, 0, 0.12));
+        max-width: 400px;
+        width: 90%;
+        max-height: 80vh;
+        overflow: auto;
+        transform: scale(0.9);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .confirm-modal-overlay.show .confirm-modal {
+        transform: scale(1);
+    }
+
+    .confirm-modal-header {
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid var(--border-color, #e5e7eb);
+    }
+
+    .confirm-modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary, #1f2937);
+        margin: 0;
+    }
+
+    .confirm-modal-body {
+        padding: 16px 24px 24px;
+    }
+
+    .confirm-modal-message {
+        color: var(--text-secondary, #6b7280);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .confirm-modal-footer {
+        padding: 16px 24px 24px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .confirm-modal-button {
+        padding: 10px 20px;
+        border-radius: var(--radius, 8px);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition, 0.2s ease);
+        border: 1px solid;
+        min-width: 80px;
+    }
+
+    .confirm-modal-cancel {
+        background: var(--white, #ffffff);
+        color: var(--text-secondary, #6b7280);
+        border-color: var(--border-color, #e5e7eb);
+    }
+
+    .confirm-modal-cancel:hover {
+        background: var(--secondary-color, #f3f4f6);
+        color: var(--text-primary, #1f2937);
+    }
+
+    .confirm-modal-confirm {
+        background: var(--danger-color, #ef4444);
+        color: white;
+        border-color: var(--danger-color, #ef4444);
+    }
+
+    .confirm-modal-confirm:hover {
+        background: #dc2626;
+        border-color: #dc2626;
+    }
+
+    .confirm-modal-confirm:focus,
+    .confirm-modal-cancel:focus {
+        outline: 2px solid var(--primary-color, #0c5a34);
+        outline-offset: 2px;
+    }
+
+    /* Animaciones de entrada y salida */
+    @keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes modalFadeOut {
+        from {
+            opacity: 1;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+    }
+</style>
+
+<script>
+    // Asegurar que el script se ejecute cuando el DOM esté listo
+    document.addEventListener("DOMContentLoaded", function () {
+        // Funciones globales para controlar el modal
+        window.ConfirmModal = {
+            show: function (
+                modalId: string,
+                onConfirm?: () => void,
+                onCancel?: () => void
+            ) {
+                const modal = document.getElementById(modalId);
+                if (!modal) {
+                    console.error("Modal no encontrado:", modalId);
+                    return;
+                }
+
+                // Mostrar el modal
+                modal.style.display = "flex";
+                setTimeout(() => modal.classList.add("show"), 10);
+
+                // Configurar event listeners
+                const setupListeners = () => {
+                    const confirmBtn = modal.querySelector(
+                        '[data-action="confirm"]'
+                    );
+                    const cancelBtn = modal.querySelector(
+                        '[data-action="cancel"]'
+                    );
+
+                    const closeModal = () => {
+                        modal.classList.remove("show");
+                        modal.classList.add("hide");
+                        setTimeout(() => {
+                            modal.style.display = "none";
+                            modal.classList.remove("hide");
+                        }, 200);
+                    };
+
+                    const handleConfirm = () => {
+                        closeModal();
+                        if (onConfirm) onConfirm();
+                    };
+
+                    const handleCancel = () => {
+                        closeModal();
+                        if (onCancel) onCancel();
+                    };
+
+                    // Limpiar listeners anteriores
+                    confirmBtn?.removeEventListener("click", handleConfirm);
+                    cancelBtn?.removeEventListener("click", handleCancel);
+
+                    // Agregar nuevos listeners
+                    confirmBtn?.addEventListener("click", handleConfirm);
+                    cancelBtn?.addEventListener("click", handleCancel);
+
+                    // Cerrar con Escape
+                    const handleEscape = (e: KeyboardEvent) => {
+                        if (e.key === "Escape") {
+                            handleCancel();
+                            document.removeEventListener(
+                                "keydown",
+                                handleEscape
+                            );
+                        }
+                    };
+                    document.addEventListener("keydown", handleEscape);
+
+                    // Cerrar al hacer clic en el overlay
+                    modal.addEventListener("click", (e) => {
+                        if (e.target === modal) {
+                            handleCancel();
+                        }
+                    });
+                };
+
+                setupListeners();
+            },
+
+            hide: function (modalId: string) {
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+
+                modal.classList.remove("show");
+                modal.classList.add("hide");
+                setTimeout(() => {
+                    modal.style.display = "none";
+                    modal.classList.remove("hide");
+                }, 200);
+            },
+        };
+
+        console.log("ConfirmModal initialized");
+    });
+
+    // Declarar el tipo global para TypeScript
+    declare global {
+        interface Window {
+            ConfirmModal: {
+                show: (
+                    modalId: string,
+                    onConfirm?: () => void,
+                    onCancel?: () => void
+                ) => void;
+                hide: (modalId: string) => void;
+            };
+        }
+    }
+</script>

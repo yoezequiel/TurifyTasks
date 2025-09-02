@@ -22,8 +22,8 @@ export async function checkAuthentication() {
 export function updateUserUI(user) {
   const userEmail = document.getElementById('userEmail');
   const userAvatar = document.getElementById('userAvatar');
-  if (userEmail) userEmail.textContent = user.email;
-  if (userAvatar) userAvatar.textContent = user.email.charAt(0).toUpperCase();
+  if (userEmail) userEmail.textContent = user.username;
+  if (userAvatar) userAvatar.textContent = user.username.charAt(0).toUpperCase();
 }
 
 export async function logout() {

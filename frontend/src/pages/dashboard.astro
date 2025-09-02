@@ -18,6 +18,11 @@ import TaskForm from '../components/TaskForm.astro';
 		<!-- Header -->
 		<header class="header">
 			<div class="header-content">
+				<button class="hamburger-btn" id="hamburgerBtn" aria-label="Abrir menú">
+					<span class="hamburger-line"></span>
+					<span class="hamburger-line"></span>
+					<span class="hamburger-line"></span>
+				</button>
 				<div class="logo">
 					<div class="logo-icon">✓</div>
 					<span>TurifyTasks</span>
@@ -33,8 +38,11 @@ import TaskForm from '../components/TaskForm.astro';
 		</header>
 
 		<div class="dashboard-layout">
+			<!-- Overlay para cerrar sidebar en móvil -->
+			<div class="sidebar-overlay" id="sidebarOverlay"></div>
+			
 			<!-- Sidebar -->
-			<aside class="sidebar">
+			<aside class="sidebar" id="sidebar">
 				<div class="sidebar-header">
 					<div class="sidebar-title">Filtros</div>
 					<div class="sidebar-subtitle">Organiza tus tareas</div>
@@ -134,6 +142,7 @@ import TaskForm from '../components/TaskForm.astro';
 		<div class="toast-container" id="toastContainer"></div>
 
 				<script type="module" src="/src/scripts/dashboard.js"></script>
+				<script type="module" src="/src/scripts/hamburger.js"></script>
 				<script>
 					// Espera a que el módulo dashboard.js cargue y exponga la función
 					window.addEventListener('DOMContentLoaded', function() {
