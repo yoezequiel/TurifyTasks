@@ -1,5 +1,7 @@
 ---
 // TaskItem.astro - Componente individual de tarea
+import DueDateInfo from './DueDateInfo.astro';
+
 export interface Props {
   task: {
     id: number;
@@ -65,13 +67,6 @@ const getPriorityColor = (priority: string) => {
           >
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
           </span>
-            <link rel="stylesheet" href="/src/styles/components/TaskItem.css" />
-            <span class={`priority-badge ${task.priority || 'default'}`}>{task.priority}</span>
-          {task.due_date && (
-            <span class="due-date" aria-label="Fecha límite">
-              📅 {formatDate(task.due_date)}
-            </span>
-          )}
         </div>
       </div>
 
@@ -79,6 +74,15 @@ const getPriorityColor = (priority: string) => {
         <p class="task-description" class:list={[task.completed && 'completed']}>
           {task.description}
         </p>
+      )}
+
+      <!-- Información de fecha límite -->
+      {task.due_date && (
+        <DueDateInfo 
+          dueDate={task.due_date} 
+          showTimeRemaining={true}
+          compact={false}
+        />
       )}
 
       <div class="task-footer">
