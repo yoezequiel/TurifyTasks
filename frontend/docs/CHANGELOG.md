@@ -91,7 +91,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
   - Funcionalidad preservada con IDs existentes
 
 - **Navegación Intuitiva**
-  - Hamburguesa solo visible cuando es necesario (móvil)
+  - Hamburguesa solo visible cuando es necesario (móvil) responsive
   - Animaciones que guían la interacción del usuario
   - Estados visuales claros (abierto/cerrado)
   - Feedback haptico mediante transiciones
