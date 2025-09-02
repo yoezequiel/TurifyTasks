@@ -465,6 +465,173 @@ app.use(cors({
 - [x] Manejo robusto de errores
 - [x] Toggle de tareas funcional
 - [x] Responsive design completo
+- [x] Sistema de fechas límite con indicadores visuales
+- [x] Filtro de tareas vencidas segregado
+
+## 📅 Sistema de Fechas Límite - Documentación Técnica
+
+### Arquitectura de Componentes para Fechas
+
+**DueDateInfo.astro** - Componente de Visualización de Fechas
+```astro
+---
+interface Props {
+  dueDate?: string;
+  showTimeRemaining?: boolean;
+  compact?: boolean;
+}
+
+// Función de normalización consistente
+const normalizeDateString = (dateStr: string) => {
+  let normalizedDateStr = dateStr;
+  
+  // Manejo de fechas YYYY-MM-DD sin zona horaria
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDateStr)) {
+    normalizedDateStr += 'T00:00:00';
+  }
+  
+  return new Date(normalizedDateStr);
+};
+
+const getDueDateInfo = (dueDateStr: string) => {
+  const now = new Date();
+  const dueDate = normalizeDateString(dueDateStr);
+  
+  const diffInMs = dueDate.getTime() - now.getTime();
+  const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+  
+  // Lógica de estados de urgencia
+  if (diffInMs < 0 && Math.abs(diffInDays) > 0) {
+    return { status: 'overdue', icon: '⚠️', urgencyClass: 'overdue' };
+  } else if (diffInDays === 0) {
+    return { status: 'today', icon: '🔥', urgencyClass: 'today' };
+  }
+  // ... más estados
+};
+---
+```
+
+### Funciones JavaScript para Renderizado Dinámico
+
+**tasks.js** - Funciones Utilitarias
+```javascript
+// Normalización centralizada de fechas
+export function normalizeDateString(dateStr) {
+  if (!dateStr) return new Date();
+  
+  let normalizedDateStr = dateStr;
+  
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDateStr)) {
+    normalizedDateStr += 'T00:00:00';
+  }
+  
+  return new Date(normalizedDateStr);
+}
+
+// Determinación de estado de vencimiento
+export function isTaskOverdue(task) {
+  if (task.completed) return false;
+  
+  const taskDate = getTaskDate(task);
+  const now = new Date();
+  
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const taskDateStart = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+  
+  return taskDateStart < todayStart;
+}
+
+// Renderizado HTML dinámico para JavaScript
+function getDueDateHtml(dueDateStr) {
+  const dueDateInfo = getDueDateInfo(dueDateStr);
+  
+  return `
+    <div class="due-date-container ${dueDateInfo.urgencyClass}">
+      <div class="due-date-main">
+        <span class="due-date-icon">${dueDateInfo.icon}</span>
+        <div class="due-date-text">
+          <span class="due-date-value">${dueDateInfo.formattedDate}</span>
+        </div>
+      </div>
+      <div class="time-remaining">
+        <span class="time-remaining-text">${dueDateInfo.timeText}</span>
+      </div>
+    </div>
+  `;
+}
+```
+
+### Sistema de Filtros de Tareas Vencidas
+
+**Lógica de Filtrado Segregado**
+```javascript
+// Exclusión de vencidas del inbox
+case 'inbox':
+  filteredTasks = allTasks.filter(task => !task.completed && !isTaskOverdue(task));
+  break;
+
+// Filtro específico para vencidas
+case 'overdue':
+  filteredTasks = allTasks.filter(task => isTaskOverdue(task));
+  break;
+
+// Actualización de contadores
+export function updateTaskCounts() {
+  const counts = {
+    inbox: allTasks.filter(task => !task.completed && !isTaskOverdue(task)).length,
+    overdue: allTasks.filter(task => isTaskOverdue(task)).length,
+    // ... otros contadores
+  };
+  
+  document.getElementById('overdueCount').textContent = counts.overdue;
+}
+```
+
+### Estilos CSS con Estados de Urgencia
+
+**Dashboard.css** - Indicadores Visuales
+```css
+/* Estados base */
+.due-date-container {
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+/* Estados de urgencia */
+.due-date-container.today {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.due-date-container.overdue {
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.due-date-container.critical {
+  animation: pulse-urgent 2s infinite;
+}
+
+/* Animación para tareas críticas */
+@keyframes pulse-urgent {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); }
+}
+
+/* Indicadores en tarjetas */
+.task-card:has(.due-date-container.overdue) {
+  border-left: 3px solid #dc2626;
+}
+```
+
+### Consistencia de Datos
+
+**Normalización Entre Componentes**
+- **Formulario**: `<input type="date">` guarda formato YYYY-MM-DD
+- **Visualización**: `normalizeDateString()` agrega T00:00:00 
+- **Procesamiento**: Mismo algoritmo en Astro y JavaScript
+- **Resultado**: Fechas consistentes sin problemas de zona horaria
 
 ### Pendientes 🔄
 - [ ] Tests automatizados (Jest + Testing Library)

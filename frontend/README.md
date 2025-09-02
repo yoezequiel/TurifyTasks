@@ -22,12 +22,32 @@ npm run dev
 
 ## 🎯 Funcionalidades
 
+### 🔐 Autenticación y Seguridad
 - ✅ **Registro de usuarios** - Formulario completo con validación
 - ✅ **Inicio de sesión** - Autenticación segura con sesiones
 - ✅ **Dashboard protegido** - Acceso solo para usuarios autenticados  
+
+### 📋 Gestión de Tareas
+- ✅ **CRUD completo** - Crear, leer, actualizar y eliminar tareas
+- ✅ **Sistema de filtros** - Inbox, Hoy, Próximas, Importantes, Completadas
+- ✅ **Toggle de completado** - Marcar tareas como completadas/pendientes
+- ✅ **Prioridades** - Sistema de alta, media y baja prioridad
+
+### 📅 Sistema de Fechas Límite (Nuevo)
+- ✅ **Fechas límite visuales** - Indicadores de tiempo restante con colores
+- ✅ **Estados de urgencia** - Hoy, Mañana, Esta semana, Vencidas, Futuras
+- ✅ **Iconos contextuales** - 🔥 Hoy, ⏰ Mañana, ⚠️ Vencidas
+- ✅ **Animaciones** - Pulso para tareas críticas y vencidas
+- ✅ **Filtro de vencidas** - Apartado específico para tareas vencidas
+- ✅ **Exclusión automática** - Las vencidas no aparecen en Inbox
+- ✅ **Normalización de fechas** - Consistencia entre formulario y visualización
+
+### 🎨 Diseño y UX
 - ✅ **Diseño responsivo** - Optimizado para móvil y desktop
+- ✅ **Menú hamburguesa** - Navegación móvil intuitiva
 - ✅ **Estados de carga** - Feedback visual durante operaciones
 - ✅ **Manejo de errores** - Mensajes claros y específicos
+- ✅ **Animaciones suaves** - Transiciones y microinteracciones
 
 ## 🏗️ Estructura del Proyecto
 

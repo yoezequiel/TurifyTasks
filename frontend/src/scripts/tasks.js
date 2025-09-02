@@ -53,14 +53,37 @@ export function getTaskDate(task) {
     return new Date();
   }
   
+  return normalizeDateString(dateStr);
+}
+
+// Función utilitaria para normalizar strings de fecha
+export function normalizeDateString(dateStr) {
+  if (!dateStr) return new Date();
+  
+  let normalizedDateStr = dateStr;
+  
   // Si es una fecha YYYY-MM-DD (sin hora), agregar T00:00:00 para evitar problemas de zona horaria
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    dateStr += 'T00:00:00';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDateStr)) {
+    normalizedDateStr += 'T00:00:00';
   }
   
-  const date = new Date(dateStr);
-  console.log(`[getTaskDate] Fecha procesada: ${dateStr} -> ${date}`);
+  const date = new Date(normalizedDateStr);
+  console.log(`[normalizeDateString] Fecha procesada: ${dateStr} -> ${date}`);
   return date;
+}
+
+// Función para determinar si una tarea está vencida
+export function isTaskOverdue(task) {
+  if (task.completed) return false; // Las tareas completadas no están vencidas
+  
+  const taskDate = getTaskDate(task);
+  const now = new Date();
+  
+  // Una tarea está vencida si la fecha límite es anterior a hoy (sin contar la hora)
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const taskDateStart = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+  
+  return taskDateStart < todayStart;
 }
 
 export async function loadTasks() {
@@ -97,7 +120,7 @@ export async function loadTasks() {
 export function updateTaskCounts() {
   const today = new Date().toDateString();
   const counts = {
-    inbox: allTasks.filter(task => !task.completed).length,
+    inbox: allTasks.filter(task => !task.completed && !isTaskOverdue(task)).length,
     today: allTasks.filter(task => {
       const taskDate = getTaskDate(task).toDateString();
       return taskDate === today && !task.completed;
@@ -106,14 +129,16 @@ export function updateTaskCounts() {
       const taskDate = getTaskDate(task);
       return taskDate > new Date() && !task.completed;
     }).length,
-    important: allTasks.filter(task => (task.priority === 'high' || task.priority === 'alta') && !task.completed).length,
-    completed: allTasks.filter(task => task.completed).length
+    important: allTasks.filter(task => (task.priority === 'high' || task.priority === 'alta') && !task.completed && !isTaskOverdue(task)).length,
+    completed: allTasks.filter(task => task.completed).length,
+    overdue: allTasks.filter(task => isTaskOverdue(task)).length
   };
   document.getElementById('inboxCount').textContent = counts.inbox;
   document.getElementById('todayCount').textContent = counts.today;
   document.getElementById('upcomingCount').textContent = counts.upcoming;
   document.getElementById('importantCount').textContent = counts.important;
   document.getElementById('completedCount').textContent = counts.completed;
+  document.getElementById('overdueCount').textContent = counts.overdue;
 }
 
 export function filterTasks(filterType) {
@@ -133,7 +158,8 @@ export function filterTasks(filterType) {
     today: 'Tareas de hoy',
     upcoming: 'Próximas tareas',
     important: 'Tareas importantes',
-    completed: 'Tareas completadas'
+    completed: 'Tareas completadas',
+    overdue: 'Tareas vencidas'
   };
   document.getElementById('pageTitle').textContent = titles[filterType];
   document.getElementById('sectionTitle').textContent = titles[filterType];
@@ -150,7 +176,7 @@ export function renderTasks() {
   // 1. Filtrar por tipo principal
   switch (currentFilter) {
     case 'inbox':
-      filteredTasks = allTasks.filter(task => !task.completed);
+      filteredTasks = allTasks.filter(task => !task.completed && !isTaskOverdue(task));
       break;
     case 'today':
       const todayDate = new Date();
@@ -171,10 +197,13 @@ export function renderTasks() {
       });
       break;
     case 'important':
-      filteredTasks = allTasks.filter(task => (task.priority === 'high' || task.priority === 'alta') && !task.completed);
+      filteredTasks = allTasks.filter(task => (task.priority === 'high' || task.priority === 'alta') && !task.completed && !isTaskOverdue(task));
       break;
     case 'completed':
       filteredTasks = allTasks.filter(task => task.completed);
+      break;
+    case 'overdue':
+      filteredTasks = allTasks.filter(task => isTaskOverdue(task));
       break;
     default:
       filteredTasks = allTasks;
@@ -206,7 +235,7 @@ export function renderTasks() {
   
   // Contador contextual inteligente
   const taskCounter = document.getElementById('taskCounter');
-  const progressFilters = ['inbox', 'today', 'upcoming'];
+  const progressFilters = ['inbox', 'today', 'upcoming', 'overdue'];
   const hasAdditionalFilters = priorityFilter || searchTerm;
   
   if (taskCounter) {
@@ -381,7 +410,7 @@ function getDueDateInfo(dueDateStr) {
   if (!dueDateStr) return null;
   
   const now = new Date();
-  const dueDate = new Date(dueDateStr);
+  const dueDate = normalizeDateString(dueDateStr);
   
   // Verificar si es una fecha válida
   if (isNaN(dueDate.getTime())) {

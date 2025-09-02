@@ -318,6 +318,16 @@ body {
 	color: var(--primary-foreground);
 }
 
+/* Estilo especial para filtro de vencidas activo */
+.sidebar-item[data-filter="overdue"].active {
+	background: #dc2626;
+	color: white;
+}
+
+.sidebar-item[data-filter="overdue"].active .sidebar-item-count {
+	background: rgba(255, 255, 255, 0.3);
+}
+
 .sidebar-item-content {
 	display: flex;
 	justify-content: space-between;
