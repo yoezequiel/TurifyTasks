@@ -1,0 +1,7 @@
+/* Estilos para TaskForm.astro extraídos de estilos inline */
+.task-form-modal {
+  display: none;
+}
+.submit-loader {
+  display: none;
+}

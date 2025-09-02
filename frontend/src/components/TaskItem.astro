@@ -65,6 +65,8 @@ const getPriorityColor = (priority: string) => {
           >
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
           </span>
+            <link rel="stylesheet" href="/src/styles/components/TaskItem.css" />
+            <span class={`priority-badge ${task.priority || 'default'}`}>{task.priority}</span>
           {task.due_date && (
             <span class="due-date" aria-label="Fecha límite">
               📅 {formatDate(task.due_date)}
@@ -101,8 +103,8 @@ const getPriorityColor = (priority: string) => {
       ✏️
     </button>
     <button 
-      class="action-btn delete-btn" 
-      onclick={`handleDelete(${task.id})`}
+      class="action-btn delete-btn js-delete-task" 
+      data-task-id={task.id}
       aria-label={`Eliminar tarea: ${task.title}`}
       title="Eliminar tarea"
     >

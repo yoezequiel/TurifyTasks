@@ -1,0 +1,13 @@
+
+.priority-badge.alta {
+  background-color: #ef4444;
+}
+.priority-badge.media {
+  background-color: #f59e0b;
+}
+.priority-badge.baja {
+  background-color: #10b981;
+}
+.priority-badge.default {
+  background-color: #6b7280;
+}
