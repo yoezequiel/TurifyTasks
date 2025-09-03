@@ -163,12 +163,12 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     // Delegación para botones de toggle tarea
-    document.body.addEventListener("click", function (e) {
+    document.body.addEventListener("change", function (e) {
         const checkbox = e.target.closest(".js-toggle-task");
         if (checkbox) {
             const taskId = checkbox.getAttribute("data-task-id");
             if (taskId) {
-                toggleTask(taskId);
+                toggleTask(parseInt(taskId));
             }
         }
     });

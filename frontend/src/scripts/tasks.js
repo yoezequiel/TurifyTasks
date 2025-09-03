@@ -360,11 +360,11 @@ export function renderTasks() {
       <div class="task-card ${task.completed ? "completed" : ""} ${
                 isOverdue ? "overdue" : ""
             }" data-task-id="${task.id}">
-        <input type="checkbox" class="task-checkbox ${
+        <input type="checkbox" class="task-checkbox js-toggle-task ${
             task.completed ? "completed" : ""
         }" 
-               ${task.completed ? "checked" : ""} 
-               onchange="window.toggleTask(${task.id})">
+               data-task-id="${task.id}"
+               ${task.completed ? "checked" : ""}> 
         <div class="task-content">
           <h3 class="task-title ${task.completed ? "completed" : ""}">${
                 task.title
@@ -450,27 +450,44 @@ export function getPriorityClass(priority) {
 
 export async function toggleTask(taskId) {
     try {
-        const task = allTasks.get().find((t) => t.id === taskId);
+        // Asegurar que taskId sea un número
+        const taskIdNumber = parseInt(taskId);
+
+        const task = allTasks.get().find((t) => t.id === taskIdNumber);
         if (!task) {
             throw new Error("Tarea no encontrada");
         }
 
+        // Preparar todos los datos de la tarea con el estado completado invertido
+        const updatedTaskData = {
+            title: task.title,
+            description: task.description,
+            due_date: task.due_date,
+            priority: task.priority,
+            list_id: task.list_id,
+            completed: !task.completed,
+        };
+
+        console.log("[toggleTask] Enviando datos completos:", updatedTaskData);
+
         const response = await apiRequest(
-            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
+            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskIdNumber}`,
             {
                 method: "PUT",
-                body: JSON.stringify({
-                    completed: !task.completed,
-                }),
+                body: JSON.stringify(updatedTaskData),
             }
         );
 
         if (!response.ok) {
-            throw new Error("Error al actualizar la tarea");
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Error al actualizar la tarea");
         }
 
-        // Actualizar la tarea usando el store
-        taskActions.updateTask(taskId, { completed: !task.completed });
+        const taskResponse = await response.json();
+        const updatedTask = taskResponse.data || taskResponse;
+
+        // Actualizar la tarea usando el store con todos los datos del servidor
+        taskActions.updateTask(taskIdNumber, updatedTask);
 
         showToast(
             !task.completed
