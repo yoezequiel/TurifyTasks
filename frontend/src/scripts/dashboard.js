@@ -1,16 +1,56 @@
 // dashboard.js - Inicialización y orquestación de dashboard
 console.log('[dashboard.js] cargado');
 import { checkAuthentication, updateUserUI, logout } from './auth.js';
-import { loadTasks, updateTaskCounts, filterTasks, renderTasks, handleSearch, handlePriorityFilter, refreshTasks, toggleTask, deleteTask, submitTask } from './tasks.js';
+import { loadTasks, updateTaskCounts, filterTasks, renderTasks, handleSearch, handlePriorityFilter, refreshTasks, toggleTask, deleteTask, submitTask, populateTaskFormListSelector } from './tasks.js';
 import { showToast } from './ui.js';
 
 // Solo necesario para el modal de tareas (mantenemos solo lo esencial)
 window.showToast = showToast;
 window.submitTask = submitTask;
 
+// Función para mostrar el formulario de tareas
+window.showTaskForm = async function(mode = 'create', task = null) {
+  const modal = document.getElementById('taskForm');
+  if (!modal) return;
+  
+  const form = document.getElementById('taskFormElement');
+  const title = modal.querySelector('.task-form-title');
+  
+  if (mode === 'create') {
+    if (title) title.textContent = 'Nueva Tarea';
+    if (form) form.reset();
+    document.getElementById('taskId').value = '';
+  } else if (mode === 'edit' && task) {
+    if (title) title.textContent = 'Editar Tarea';
+    // Llenar formulario con datos de la tarea
+    document.getElementById('taskTitle').value = task.title || '';
+    document.getElementById('taskDescription').value = task.description || '';
+    document.getElementById('taskPriority').value = task.priority || 'medium';
+    document.getElementById('taskDueDate').value = task.due_date ? task.due_date.split('T')[0] : '';
+    document.getElementById('taskId').value = task.id || '';
+  }
+  
+  // Poblar selector de listas de tareas
+  await populateTaskFormListSelector();
+  
+  // Mostrar modal
+  modal.style.display = 'flex';
+};
+
+// Función para cerrar el formulario de tareas
+window.closeTaskForm = function() {
+  const modal = document.getElementById('taskForm');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+};
+
 // Inicialización
 window.addEventListener('DOMContentLoaded', () => {
+  console.log('[dashboard.js] DOM cargado, iniciando...');
+  console.log('[dashboard.js] Llamando a checkAuthentication...');
   checkAuthentication();
+  console.log('[dashboard.js] Llamando a loadTasks...');
   loadTasks();
 
   // Event Listeners para filtros de sidebar
@@ -91,3 +131,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Exponer funciones necesarias globalmente
+window.toggleTask = toggleTask;
+window.deleteTask = deleteTask;

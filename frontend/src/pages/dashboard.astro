@@ -4,6 +4,7 @@ import type { Task, User } from '../types';
 import TaskList from '../components/TaskList.astro';
 import TaskForm from '../components/TaskForm.astro';
 import TaskListsManager from '../components/TaskListsManager.astro';
+import '../styles/components/Dashboard.css';
 ---
 
 <html lang="es">
@@ -13,7 +14,6 @@ import TaskListsManager from '../components/TaskListsManager.astro';
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Dashboard - TurifyTasks</title>
-	<link rel="stylesheet" href="/src/styles/components/Dashboard.css" />
 	</head>
 	<body>
 		<!-- Header -->
@@ -115,9 +115,9 @@ import TaskListsManager from '../components/TaskListsManager.astro';
 						>
 						<select class="filter-select" id="priorityFilter">
 							<option value="">Todas las prioridades</option>
-							<option value="high">🔴 Alta prioridad</option>
-							<option value="medium">🟡 Prioridad media</option>
-							<option value="low">🟢 Baja prioridad</option>
+							<option value="alta">🔴 Alta prioridad</option>
+							<option value="media">🟡 Prioridad media</option>
+							<option value="baja">🟢 Baja prioridad</option>
 						</select>
 					</div>
 				</div>

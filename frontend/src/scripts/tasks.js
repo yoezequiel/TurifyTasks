@@ -132,11 +132,14 @@ export function isTaskOverdue(task) {
 export async function loadTasks() {
   try {
     console.log('[loadTasks] Iniciando carga de tareas...');
+    console.log('[loadTasks] URL de fetch:', 'http://localhost:3000/api/tasks');
+    
     const response = await fetch('http://localhost:3000/api/tasks', {
       credentials: 'include'
     });
 
     console.log('[loadTasks] Respuesta del servidor:', response.status);
+    console.log('[loadTasks] Headers de respuesta:', [...response.headers.entries()]);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -145,6 +148,8 @@ export async function loadTasks() {
         return;
       }
       console.error('[loadTasks] Error en respuesta:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('[loadTasks] Contenido del error:', errorText);
       throw new Error('Error al cargar las tareas');
     }
 
@@ -165,11 +170,14 @@ export async function loadTasks() {
     } else {
       // Si no es un array, inicializar como array vacío
       console.warn('[loadTasks] Respuesta no es un array, inicializando como array vacío');
+      console.warn('[loadTasks] Estructura de respuesta:', Object.keys(tasks || {}));
       allTasks = [];
     }
     
     console.log('[loadTasks] Tareas procesadas:', allTasks.length);
     console.log('[loadTasks] allTasks es array:', Array.isArray(allTasks));
+    console.log('[loadTasks] Contenido de allTasks:', allTasks);
+    
     renderTasks();
     updateTaskCounts();
     
@@ -270,23 +278,31 @@ export function filterTasks(filterType) {
 }
 
 export function renderTasks() {
+  console.log('[renderTasks] === INICIO DE RENDERIZADO ===');
   console.log('[renderTasks] Renderizando tareas para filtro:', currentFilter);
+  console.log('[renderTasks] allTasks.length:', allTasks.length);
   
   const taskList = document.getElementById('tasksContainer');
   const loadingState = document.getElementById('loadingState');
   
   console.log('[renderTasks] Elemento tasksContainer encontrado:', !!taskList);
+  console.log('[renderTasks] Elemento loadingState encontrado:', !!loadingState);
+  
   if (!taskList) {
     console.warn('[renderTasks] Elemento tasksContainer no encontrado');
+    console.warn('[renderTasks] Elementos disponibles con ID que contienen "task":', 
+      Array.from(document.querySelectorAll('[id*="task"]')).map(el => el.id));
     return;
   }
 
   // Ocultar estado de carga
   if (loadingState) {
+    console.log('[renderTasks] Ocultando estado de carga');
     loadingState.style.display = 'none';
   }
 
   let tasksToRender = filterTasks(currentFilter);
+  console.log('[renderTasks] Tareas después del filtro:', tasksToRender.length);
 
   // Aplicar filtros adicionales (búsqueda y prioridad)
   if (searchTerm) {
@@ -318,42 +334,34 @@ export function renderTasks() {
     const dueDateHtml = getDueDateHtml(task.due_date);
     
     return `
-      <div class="task-item ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" data-task-id="${task.id}">
-        <div class="task-main">
-          <div class="task-checkbox-container">
-            <input type="checkbox" class="task-checkbox" 
-                   ${task.completed ? 'checked' : ''} 
-                   onchange="window.toggleTask(${task.id})">
+      <div class="task-card ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" data-task-id="${task.id}">
+        <input type="checkbox" class="task-checkbox ${task.completed ? 'completed' : ''}" 
+               ${task.completed ? 'checked' : ''} 
+               onchange="window.toggleTask(${task.id})">
+        <div class="task-content">
+          <h3 class="task-title ${task.completed ? 'completed' : ''}">${task.title}</h3>
+          ${task.description ? `<p class="task-desc ${task.completed ? 'completed' : ''}">${task.description}</p>` : ''}
+          <div class="task-meta">
+            <span class="priority-badge ${getPriorityClass(task.priority)}">${getPriorityText(task.priority)}</span>
+            ${task.list_name ? `<span class="task-list">📋 ${task.list_name}</span>` : ''}
+            ${dueDateHtml}
           </div>
-          <div class="task-content">
-            <div class="task-header">
-              <h3 class="task-title">${task.title}</h3>
-              <div class="task-actions">
-                <button class="task-action-btn edit-btn" onclick="window.showTaskForm('edit', ${JSON.stringify(task).replace(/"/g, '&quot;')})" title="Editar tarea">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                </button>
-                <button class="task-action-btn delete-btn" onclick="window.deleteTask(${task.id})" title="Eliminar tarea">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3,6 5,6 21,6"></polyline>
-                    <path d="m19,6v14a2,2 0 0 1-2,2H7a2,2 0 0 1-2-2V6m3,0V4a2,2 0 0 1 2-2h4a2,2 0 0 1 2,2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            ${task.description ? `<p class="task-description">${task.description}</p>` : ''}
-            <div class="task-meta">
-              <span class="task-priority ${getPriorityClass(task.priority)}">
-                ${getPriorityText(task.priority)}
-              </span>
-              ${task.list_name ? `<span class="task-list">📋 ${task.list_name}</span>` : ''}
-              ${dueDateHtml}
-            </div>
-          </div>
+        </div>
+        <div class="task-actions">
+          <button class="edit-btn" onclick="window.showTaskForm('edit', ${JSON.stringify(task).replace(/"/g, '&quot;')})" title="Editar tarea">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2-2v-7"></path>
+              <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button class="delete-btn" onclick="window.deleteTask(${task.id})" title="Eliminar tarea">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3,6 5,6 21,6"></polyline>
+              <path d="m19,6v14a2,2 0 0 1-2,2H7a2,2 0 0 1-2-2V6m3,0V4a2,2 0 0 1 2-2h4a2,2 0 0 1 2,2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
         </div>
       </div>
     `;
@@ -365,19 +373,33 @@ export function renderTasks() {
 
 export function getPriorityText(priority) {
   switch (priority) {
-    case 'high': return 'Alta';
-    case 'medium': return 'Media';
-    case 'low': return 'Baja';
-    default: return 'Sin prioridad';
+    case 'alta':
+    case 'high':
+      return 'Alta';
+    case 'media':
+    case 'medium':
+      return 'Media';
+    case 'baja':
+    case 'low':
+      return 'Baja';
+    default:
+      return 'Sin prioridad';
   }
 }
 
 export function getPriorityClass(priority) {
   switch (priority) {
-    case 'high': return 'priority-high';
-    case 'medium': return 'priority-medium';
-    case 'low': return 'priority-low';
-    default: return 'priority-none';
+    case 'alta':
+    case 'high':
+      return 'priority-alta';
+    case 'media':
+    case 'medium':
+      return 'priority-media';
+    case 'baja':
+    case 'low':
+      return 'priority-baja';
+    default:
+      return 'priority-baja';
   }
 }
 
