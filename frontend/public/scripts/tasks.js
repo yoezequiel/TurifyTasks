@@ -1,4 +1,4 @@
-// tasks.js - Gestión de tareas simplificada
+// tasks.js - Gestión de tareas y filtros con nanostores
 console.log("[tasks.js] Script cargado en:", window.location.href);
 
 import { showToast } from "./ui.js";
@@ -24,148 +24,224 @@ export function setCurrentFilter(filter) {
     taskActions.setFilter(filter);
 }
 
-// Cargar todas las tareas
-export async function loadTasks() {
-    console.log("[tasks.js] Cargando tareas...");
-    taskActions.setLoading(true);
-
+// Función para pre-seleccionar la lista de tareas en el formulario
+export async function populateTaskFormListSelector(preselectedListId = null) {
     try {
-        const response = await apiRequest(API_CONFIG.ENDPOINTS.TASKS.BASE);
-        console.log("[tasks.js] Respuesta de la API:", response.status);
+        const response = await apiRequest(API_CONFIG.ENDPOINTS.TASK_LISTS.BASE);
 
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            throw new Error("Error al cargar las listas de tareas");
         }
 
-        const data = await response.json();
-        console.log("[tasks.js] Datos recibidos:", data);
+        const taskLists = await response.json();
+        const listSelector = document.getElementById("task-list-selector");
 
-        const tasks = data.data || data || [];
-        console.log("[tasks.js] Tareas procesadas:", tasks.length);
+        if (!listSelector) return;
 
-        taskActions.setTasks(tasks);
-        showToast(`${tasks.length} tareas cargadas`, "success");
+        // Limpiar opciones existentes excepto la primera
+        listSelector.innerHTML =
+            '<option value="">Sin lista específica</option>';
 
-        return tasks;
+        // Agregar las listas de tareas
+        taskLists.forEach((list) => {
+            const option = document.createElement("option");
+            option.value = list.id;
+            option.textContent = list.name;
+            listSelector.appendChild(option);
+        });
+
+        // Si se especifica una lista para pre-seleccionar, usarla
+        if (preselectedListId) {
+            listSelector.value = preselectedListId;
+        } else {
+            // Pre-seleccionar basado en el filtro actual
+            const filter = getCurrentFilter();
+            if (
+                filter &&
+                filter !== "inbox" &&
+                filter !== "today" &&
+                filter !== "overdue" &&
+                filter !== "completed"
+            ) {
+                // Es un filtro de lista específica
+                const listId = filter.replace("list-", "");
+                listSelector.value = listId;
+            }
+        }
     } catch (error) {
-        console.error("[tasks.js] Error al cargar tareas:", error);
-        showToast("Error al cargar las tareas: " + error.message, "error");
-        return [];
+        console.error("Error al poblar selector de listas:", error);
+        showToast("Error al cargar las listas de tareas", "error");
+    }
+}
+
+export async function submitTask(taskData) {
+    try {
+        const isEdit = taskData.id && taskData.id.toString().trim() !== "";
+        const method = isEdit ? "PUT" : "POST";
+        const endpoint = isEdit
+            ? `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskData.id}`
+            : API_CONFIG.ENDPOINTS.TASKS.BASE;
+
+        console.log("[submitTask] Modo:", isEdit ? "edición" : "creación");
+        console.log("[submitTask] Endpoint:", endpoint);
+        console.log("[submitTask] Datos originales:", taskData);
+
+        // Limpiar los datos antes de enviar
+        const cleanedData = { ...taskData };
+
+        // Convertir list_id vacío a null
+        if (cleanedData.list_id === "" || cleanedData.list_id === "0") {
+            cleanedData.list_id = null;
+        } else if (cleanedData.list_id) {
+            cleanedData.list_id = parseInt(cleanedData.list_id);
+        }
+
+        // Limpiar campos vacíos
+        if (cleanedData.description === "") {
+            cleanedData.description = null;
+        }
+
+        if (cleanedData.due_date === "") {
+            cleanedData.due_date = null;
+        }
+
+        console.log("[submitTask] Datos limpiados:", cleanedData);
+
+        const response = await apiRequest(endpoint, {
+            method: method,
+            body: JSON.stringify(cleanedData),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+                errorData.error ||
+                    `Error al ${isEdit ? "actualizar" : "crear"} la tarea`
+            );
+        }
+
+        const taskResponse = await response.json();
+        console.log("[submitTask] Respuesta del servidor:", taskResponse);
+
+        // Extraer la tarea de la respuesta del servidor
+        const taskResult = taskResponse.data || taskResponse;
+
+        if (isEdit) {
+            // Actualizar tarea existente
+            const taskIdNumber = parseInt(taskData.id);
+            taskActions.updateTask(taskIdNumber, taskResult);
+            showToast("Tarea actualizada exitosamente", "success");
+        } else {
+            // Agregar nueva tarea
+            taskActions.addTask(taskResult);
+            showToast("Tarea creada exitosamente", "success");
+        }
+
+        return taskResult;
+    } catch (error) {
+        console.error("Error al enviar tarea:", error);
+        showToast(error.message, "error");
+        throw error;
+    }
+}
+
+export function getTaskDate(task) {
+    if (task.due_date) {
+        try {
+            const date = new Date(task.due_date);
+            if (!isNaN(date.getTime())) {
+                return date;
+            }
+        } catch (e) {
+            console.warn("Invalid date format:", task.due_date);
+        }
+    }
+    return null;
+}
+
+export function normalizeDateString(dateStr) {
+    if (!dateStr) return null;
+
+    try {
+        if (dateStr.includes("T")) {
+            return dateStr.split("T")[0];
+        }
+
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString().split("T")[0];
+        }
+    } catch (e) {
+        console.warn("Error normalizing date:", dateStr, e);
+    }
+
+    return dateStr;
+}
+
+export function isTaskOverdue(task) {
+    const taskDate = getTaskDate(task);
+    if (!taskDate) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return taskDate < today && !task.completed;
+}
+
+export async function loadTasks() {
+    try {
+        console.log("[loadTasks] Iniciando carga de tareas...");
+        taskActions.setLoading(true);
+
+        const response = await apiRequest(API_CONFIG.ENDPOINTS.TASKS.BASE);
+
+        console.log("[loadTasks] Respuesta del servidor:", response.status);
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.error("[loadTasks] No autenticado, redirigiendo...");
+                window.location.href = "/login";
+                return;
+            }
+            throw new Error("Error al cargar las tareas");
+        }
+
+        const tasks = await response.json();
+        console.log("[loadTasks] Respuesta del servidor (raw):", tasks);
+
+        // Validar que la respuesta sea un array
+        let tasksArray = [];
+        if (Array.isArray(tasks)) {
+            tasksArray = tasks;
+        } else if (tasks && Array.isArray(tasks.tasks)) {
+            tasksArray = tasks.tasks;
+        } else if (tasks && Array.isArray(tasks.data)) {
+            tasksArray = tasks.data;
+        } else {
+            console.warn(
+                "[loadTasks] Respuesta no es un array, inicializando como array vacío"
+            );
+            tasksArray = [];
+        }
+
+        taskActions.setTasks(tasksArray);
+        console.log("[loadTasks] Tareas cargadas:", tasksArray.length);
+
+        // Forzar renderizado inicial ya que las suscripciones pueden no ejecutarse
+        setTimeout(() => renderTasks(), 0);
+    } catch (error) {
+        console.error("Error al cargar tareas:", error);
+        showToast("Error al cargar las tareas", "error");
     } finally {
         taskActions.setLoading(false);
     }
 }
 
-// Renderizar tareas en el DOM
-export function renderTasks() {
-    console.log("[tasks.js] Renderizando tareas...");
-    const tasksContainer = document.getElementById("tasksContainer");
-    const loadingState = document.getElementById("loadingState");
-
-    if (!tasksContainer) {
-        console.warn("[tasks.js] Contenedor de tareas no encontrado");
-        return;
-    }
-
-    // Ocultar loading
-    if (loadingState) {
-        loadingState.style.display = "none";
-    }
-
-    const tasks = filteredTasks.get();
-    console.log("[tasks.js] Tareas filtradas a renderizar:", tasks.length);
-
-    if (tasks.length === 0) {
-        tasksContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📝</div>
-                <h3>No hay tareas</h3>
-                <p>Crea tu primera tarea para comenzar</p>
-            </div>
-        `;
-        return;
-    }
-
-    tasksContainer.innerHTML = tasks
-        .map((task) => createTaskHTML(task))
-        .join("");
-}
-
-// Crear HTML para una tarea
-function createTaskHTML(task) {
-    const isCompleted = task.completed ? "checked" : "";
-    const completedClass = task.completed ? "task-completed" : "";
-    const priorityClass = task.priority ? `priority-${task.priority}` : "";
-
-    return `
-        <div class="task-item ${completedClass} ${priorityClass}" data-task-id="${
-        task.id
-    }">
-            <div class="task-content">
-                <input 
-                    type="checkbox" 
-                    class="task-checkbox js-toggle-task" 
-                    data-task-id="${task.id}" 
-                    ${isCompleted}
-                >
-                <div class="task-details">
-                    <h4 class="task-title">${escapeHtml(task.title)}</h4>
-                    ${
-                        task.description
-                            ? `<p class="task-description">${escapeHtml(
-                                  task.description
-                              )}</p>`
-                            : ""
-                    }
-                    ${
-                        task.due_date
-                            ? `<span class="task-due-date">📅 ${formatDate(
-                                  task.due_date
-                              )}</span>`
-                            : ""
-                    }
-                </div>
-            </div>
-            <div class="task-actions">
-                <button class="task-action-btn js-edit-task" data-task='${JSON.stringify(
-                    task
-                ).replace(/"/g, "&quot;")}' title="Editar">
-                    ✏️
-                </button>
-                <button class="task-action-btn js-delete-task danger" data-task-id="${
-                    task.id
-                }" title="Eliminar">
-                    🗑️
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// Función helper para escapar HTML
-function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Función helper para formatear fechas
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("es-ES");
-    } catch (error) {
-        return dateString;
-    }
-}
-
-// Actualizar contadores de tareas
 export function updateTaskCounts() {
-    console.log("[tasks.js] Actualizando contadores...");
+    // Los contadores ahora se calculan automáticamente con los computed stores
     const counts = taskCounts.get();
-    console.log("[tasks.js] Contadores:", counts);
 
-    // Actualizar contadores en el sidebar
+    // Actualizar los contadores en la UI
     Object.keys(counts).forEach((key) => {
         const element = document.querySelector(
             `[data-filter="${key}"] .sidebar-item-count`
@@ -174,189 +250,410 @@ export function updateTaskCounts() {
             element.textContent = counts[key];
         }
     });
-
-    // Actualizar contador principal
-    const taskCounter = document.getElementById("taskCounter");
-    if (taskCounter) {
-        const filteredCount = filteredTasks.get().length;
-        const totalCount = allTasks.get().length;
-        taskCounter.textContent = `${filteredCount}/${totalCount}`;
-    }
 }
 
-// Función para filtrar tareas
 export function filterTasks(filterType) {
-    console.log("[tasks.js] Aplicando filtro:", filterType);
     taskActions.setFilter(filterType);
 
-    // Actualizar UI del filtro activo
-    document.querySelectorAll("[data-filter]").forEach((btn) => {
-        btn.classList.remove("active");
+    // Actualizar UI de navegación
+    updateActiveFilter(filterType);
+
+    // Actualizar títulos
+    updatePageTitles(filterType);
+
+    // Actualizar contadores
+    updateTaskCounts();
+
+    // No es necesario llamar renderTasks() aquí porque
+    // las suscripciones se encargarán automáticamente
+}
+
+// Función para actualizar el elemento activo del sidebar
+function updateActiveFilter(filterType) {
+    // Remover clase activa de todos los elementos
+    document.querySelectorAll(".sidebar-item").forEach((item) => {
+        item.classList.remove("active");
     });
 
-    const activeButton = document.querySelector(
+    // Agregar clase activa al elemento seleccionado
+    const activeElement = document.querySelector(
         `[data-filter="${filterType}"]`
     );
-    if (activeButton) {
-        activeButton.classList.add("active");
+    if (activeElement) {
+        activeElement.classList.add("active");
     }
+}
 
-    // Actualizar título de la sección
+// Función para actualizar los títulos de la página
+function updatePageTitles(filterType) {
+    const titles = {
+        inbox: "Bandeja de entrada",
+        today: "Tareas de hoy",
+        upcoming: "Próximas tareas",
+        important: "Tareas importantes",
+        overdue: "Tareas vencidas",
+        completed: "Tareas completadas",
+    };
+
+    const pageTitle = document.getElementById("pageTitle");
     const sectionTitle = document.getElementById("sectionTitle");
-    if (sectionTitle) {
-        const filterNames = {
-            inbox: "Bandeja de entrada",
-            today: "Hoy",
-            upcoming: "Próximas",
-            important: "Importantes",
-            overdue: "Vencidas",
-            completed: "Completadas",
-        };
 
-        sectionTitle.textContent = filterNames[filterType] || "Tareas";
+    let title = titles[filterType];
+
+    // Si es un filtro de lista específica, obtener el nombre de la lista
+    if (filterType.startsWith("list-")) {
+        title = "Lista de Tareas"; // Esto se puede mejorar obteniendo el nombre real de la lista
     }
+
+    if (pageTitle) pageTitle.textContent = title || "Tareas";
+    if (sectionTitle) sectionTitle.textContent = title || "Tareas";
 }
 
-// Función para manejar búsqueda
-export function handleSearch(searchValue) {
-    console.log("[tasks.js] Búsqueda:", searchValue);
-    taskActions.setSearch(searchValue);
-}
+export function renderTasks() {
+    console.log("[renderTasks] === INICIO DE RENDERIZADO ===");
 
-// Función para manejar filtro de prioridad
-export function handlePriorityFilter(event) {
-    const priority = event.target.value;
-    console.log("[tasks.js] Filtro de prioridad:", priority);
-    taskActions.setPriorityFilter(priority);
-}
+    const taskList = document.getElementById("tasksContainer");
+    const loadingState = document.getElementById("loadingState");
 
-// Función para refrescar tareas
-export function refreshTasks() {
-    console.log("[tasks.js] Refrescando tareas...");
-    loadTasks();
-}
-
-// Función para toggle de tarea
-export function toggleTask(taskId) {
-    console.log("[tasks.js] Toggle tarea:", taskId);
-    const tasks = allTasks.get();
-    const task = tasks.find((t) => t.id == taskId);
-
-    if (!task) {
-        console.error("[tasks.js] Tarea no encontrada:", taskId);
+    if (!taskList) {
+        console.warn("[renderTasks] Elemento tasksContainer no encontrado");
         return;
     }
 
-    const newCompleted = !task.completed;
-    console.log("[tasks.js] Cambiando estado completed a:", newCompleted);
+    // Verificar estado de carga
+    const loading = isLoading.get();
+    console.log("[renderTasks] Estado de carga:", loading);
 
-    // Actualizar optimísticamente
-    taskActions.updateTask(taskId, { completed: newCompleted });
+    if (loadingState) {
+        loadingState.style.display = loading ? "block" : "none";
+    }
 
-    // Enviar al servidor
-    updateTaskOnServer(taskId, { completed: newCompleted });
+    // Si está cargando, no renderizar tareas aún
+    if (loading) {
+        console.log("[renderTasks] Todavía cargando, esperando...");
+        return;
+    }
+
+    // Obtener tareas filtradas desde el store
+    const tasksToRender = filteredTasks.get();
+    console.log("[renderTasks] Tareas a renderizar:", tasksToRender.length);
+
+    if (tasksToRender.length === 0) {
+        taskList.innerHTML = `
+      <div class="no-tasks">
+        <p>No hay tareas para mostrar</p>
+      </div>
+    `;
+        return;
+    }
+
+    // Ordenar las tareas por fecha de creación (más recientes primero)
+    const sortedTasks = [...tasksToRender].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    taskList.innerHTML = sortedTasks
+        .map((task) => {
+            const taskDate = getTaskDate(task);
+            const isOverdue = isTaskOverdue(task);
+            const dueDateHtml = getDueDateHtml(task.due_date);
+
+            return `
+      <div class="task-card ${task.completed ? "completed" : ""} ${
+                isOverdue ? "overdue" : ""
+            }" data-task-id="${task.id}">
+        <input type="checkbox" class="task-checkbox js-toggle-task ${
+            task.completed ? "completed" : ""
+        }" 
+               data-task-id="${task.id}"
+               ${task.completed ? "checked" : ""}> 
+        <div class="task-content">
+          <h3 class="task-title ${task.completed ? "completed" : ""}">${
+                task.title
+            }</h3>
+          ${
+              task.description
+                  ? `<p class="task-desc ${
+                        task.completed ? "completed" : ""
+                    }">${task.description}</p>`
+                  : ""
+          }
+          <div class="task-meta">
+            <span class="priority-badge ${getPriorityClass(
+                task.priority
+            )}">${getPriorityText(task.priority)}</span>
+            ${
+                task.list_name
+                    ? `<span class="task-list">📋 ${task.list_name}</span>`
+                    : ""
+            }
+            ${dueDateHtml}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="edit-btn" onclick="window.showTaskForm('edit', ${JSON.stringify(
+              task
+          ).replace(/"/g, "&quot;")})" title="Editar tarea">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2-2v-7"></path>
+              <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button class="delete-btn" onclick="window.deleteTask(${
+              task.id
+          })" title="Eliminar tarea">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3,6 5,6 21,6"></polyline>
+              <path d="m19,6v14a2,2 0 0 1-2,2H7a2,2 0 0 1-2-2V6m3,0V4a2,2 0 0 1 2-2h4a2,2 0 0 1 2,2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+        })
+        .join("");
+
+    console.log("[renderTasks] Renderizadas", sortedTasks.length, "tareas");
 }
 
-// Función para eliminar tarea
-export function deleteTask(taskId) {
-    console.log("[tasks.js] Eliminando tarea:", taskId);
-
-    if (confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
-        // Eliminar optimísticamente
-        taskActions.removeTask(taskId);
-
-        // Eliminar en el servidor
-        deleteTaskOnServer(taskId);
+export function getPriorityText(priority) {
+    switch (priority) {
+        case "alta":
+        case "high":
+            return "Alta";
+        case "media":
+        case "medium":
+            return "Media";
+        case "baja":
+        case "low":
+            return "Baja";
+        default:
+            return "Sin prioridad";
     }
 }
 
-// Función para actualizar tarea en el servidor
-async function updateTaskOnServer(taskId, updates) {
+export function getPriorityClass(priority) {
+    switch (priority) {
+        case "alta":
+        case "high":
+            return "priority-alta";
+        case "media":
+        case "medium":
+            return "priority-media";
+        case "baja":
+        case "low":
+            return "priority-baja";
+        default:
+            return "priority-baja";
+    }
+}
+
+export async function toggleTask(taskId) {
     try {
+        // Asegurar que taskId sea un número
+        const taskIdNumber = parseInt(taskId);
+
+        const task = allTasks.get().find((t) => t.id === taskIdNumber);
+        if (!task) {
+            throw new Error("Tarea no encontrada");
+        }
+
+        // Preparar todos los datos de la tarea con el estado completado invertido
+        const updatedTaskData = {
+            title: task.title,
+            description: task.description,
+            due_date: task.due_date,
+            priority: task.priority,
+            list_id: task.list_id,
+            completed: !task.completed,
+        };
+
+        console.log("[toggleTask] Enviando datos completos:", updatedTaskData);
+
         const response = await apiRequest(
-            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
+            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskIdNumber}`,
             {
                 method: "PUT",
-                body: JSON.stringify(updates),
+                body: JSON.stringify(updatedTaskData),
             }
         );
 
         if (!response.ok) {
-            throw new Error("Error al actualizar tarea");
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Error al actualizar la tarea");
         }
 
-        console.log("[tasks.js] Tarea actualizada en el servidor");
-        showToast("Tarea actualizada", "success");
-    } catch (error) {
-        console.error("[tasks.js] Error al actualizar tarea:", error);
-        showToast("Error al actualizar tarea", "error");
-        // Recargar tareas para sincronizar
-        loadTasks();
-    }
-}
+        const taskResponse = await response.json();
+        const updatedTask = taskResponse.data || taskResponse;
 
-// Función para eliminar tarea en el servidor
-async function deleteTaskOnServer(taskId) {
-    try {
-        const response = await apiRequest(
-            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
-            {
-                method: "DELETE",
-            }
+        // Actualizar la tarea usando el store con todos los datos del servidor
+        taskActions.updateTask(taskIdNumber, updatedTask);
+
+        showToast(
+            !task.completed
+                ? "Tarea completada"
+                : "Tarea marcada como pendiente",
+            "success"
         );
-
-        if (!response.ok) {
-            throw new Error("Error al eliminar tarea");
-        }
-
-        console.log("[tasks.js] Tarea eliminada del servidor");
-        showToast("Tarea eliminada", "success");
     } catch (error) {
-        console.error("[tasks.js] Error al eliminar tarea:", error);
-        showToast("Error al eliminar tarea", "error");
-        // Recargar tareas para sincronizar
-        loadTasks();
+        console.error("Error al cambiar estado de tarea:", error);
+        showToast(error.message, "error");
     }
 }
 
-// Función para enviar nueva tarea o actualizar existente
-export async function submitTask(formData) {
-    console.log("[tasks.js] Enviando tarea:", formData);
+export async function deleteTask(taskId) {
+    return new Promise((resolve) => {
+        if (window.ConfirmModal) {
+            window.ConfirmModal.show(
+                "confirmDeleteTask",
+                async () => {
+                    try {
+                        const response = await apiRequest(
+                            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
+                            {
+                                method: "DELETE",
+                            }
+                        );
 
-    try {
-        const isEdit = formData.id && formData.id !== "";
-        const url = isEdit
-            ? `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${formData.id}`
-            : API_CONFIG.ENDPOINTS.TASKS.BASE;
-        const method = isEdit ? "PUT" : "POST";
+                        if (!response.ok) {
+                            throw new Error("Error al eliminar la tarea");
+                        }
 
-        const response = await apiRequest(url, {
-            method,
-            body: JSON.stringify(formData),
-        });
-
-        if (!response.ok) {
-            throw new Error("Error al guardar tarea");
+                        // Remover la tarea usando el store
+                        taskActions.removeTask(taskId);
+                        showToast("Tarea eliminada exitosamente", "success");
+                        resolve(true);
+                    } catch (error) {
+                        console.error("Error al eliminar tarea:", error);
+                        showToast(error.message, "error");
+                        resolve(false);
+                    }
+                },
+                () => {
+                    resolve(false); // Usuario canceló
+                }
+            );
+        } else {
+            console.error("ConfirmModal no está disponible");
+            resolve(false);
         }
-
-        const result = await response.json();
-        console.log("[tasks.js] Tarea guardada:", result);
-
-        showToast(isEdit ? "Tarea actualizada" : "Tarea creada", "success");
-
-        // Recargar tareas
-        await loadTasks();
-
-        return result;
-    } catch (error) {
-        console.error("[tasks.js] Error al guardar tarea:", error);
-        showToast("Error al guardar tarea: " + error.message, "error");
-        throw error;
-    }
+    });
 }
 
-// Función para poblar selector de listas en el formulario
-export async function populateTaskFormListSelector(preselectedListId = null) {
-    console.log("[tasks.js] Poblando selector de listas...");
-    // Esta función se puede implementar cuando se copie taskLists.js
+// Funciones para manejar búsqueda y filtros
+export function handleSearch(term) {
+    taskActions.setSearch(term);
+    console.log("[handleSearch] searchTerm:", term);
+    // No necesitamos llamar renderTasks() porque las suscripciones se encargan
+}
+
+export function handlePriorityFilter() {
+    const prioritySelect = document.getElementById("priorityFilter");
+    const priority = prioritySelect ? prioritySelect.value : "";
+    taskActions.setPriorityFilter(priority);
+    console.log("[handlePriorityFilter] priorityFilter:", priority);
+    // No necesitamos llamar renderTasks() porque las suscripciones se encargan
+}
+
+export function refreshTasks() {
+    loadTasks();
+    showToast("Tareas actualizadas", "success");
+}
+
+// Funciones utilitarias para fechas límite
+function getDueDateInfo(dueDateStr) {
+    if (!dueDateStr) {
+        return null;
+    }
+
+    const dueDate = new Date(dueDateStr);
+    if (isNaN(dueDate.getTime())) {
+        return null;
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const dueDateOnly = new Date(
+        dueDate.getFullYear(),
+        dueDate.getMonth(),
+        dueDate.getDate()
+    );
+
+    const diffTime = dueDateOnly - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let status, urgencyClass, icon, timeText;
+
+    if (diffDays < 0) {
+        status = "overdue";
+        urgencyClass = "overdue";
+        icon = "⚠️";
+        timeText = `Vencida hace ${Math.abs(diffDays)} día(s)`;
+    } else if (diffDays === 0) {
+        status = "today";
+        urgencyClass = "urgent";
+        icon = "🔥";
+        timeText = "Vence hoy";
+    } else if (diffDays === 1) {
+        status = "tomorrow";
+        urgencyClass = "warning";
+        icon = "⏰";
+        timeText = "Vence mañana";
+    } else if (diffDays <= 7) {
+        status = "this-week";
+        urgencyClass = "warning";
+        icon = "📅";
+        timeText = `Vence en ${diffDays} días`;
+    } else {
+        status = "future";
+        urgencyClass = "normal";
+        icon = "📅";
+        timeText = `Vence en ${diffDays} días`;
+    }
+
+    return {
+        status,
+        urgencyClass,
+        icon,
+        timeText,
+        formattedDate: dueDate.toLocaleDateString("es-AR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        }),
+    };
+}
+
+function getDueDateHtml(dueDateStr) {
+    const dueDateInfo = getDueDateInfo(dueDateStr);
+
+    if (!dueDateInfo) {
+        return "";
+    }
+
+    return `
+    <div class="due-date-container ${dueDateInfo.urgencyClass}">
+      <div class="due-date-main">
+        <span class="due-date-icon" title="Estado: ${dueDateInfo.status}">
+          ${dueDateInfo.icon}
+        </span>
+        <div class="due-date-text">
+          <span class="due-date-label">Fecha límite:</span>
+          <span class="due-date-value" title="${dueDateInfo.formattedDate}">
+            ${dueDateInfo.formattedDate}
+          </span>
+        </div>
+      </div>
+      <div class="time-remaining ${dueDateInfo.urgencyClass}">
+        <span class="time-remaining-text">
+          ${dueDateInfo.timeText}
+        </span>
+      </div>
+    </div>
+  `;
 }

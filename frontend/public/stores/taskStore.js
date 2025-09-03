@@ -1,60 +1,18 @@
-// taskStore.js - Manejo de estado simplificado
-console.log("[taskStore.js] Script cargado en:", window.location.href);
+// taskStore.js - Manejo de estado con nanostores
+import { atom, computed } from "nanostores";
 
-// Estados principales (versión simplificada sin nanostores)
-let state = {
-    allTasks: [],
-    currentFilter: "inbox",
-    searchTerm: "",
-    priorityFilter: "",
-    currentTaskListId: null,
-    isLoading: false,
-    subscribers: {
-        allTasks: [],
-        filteredTasks: [],
-        taskCounts: [],
-        isLoading: [],
-    },
-};
+// Estados principales
+export const allTasks = atom([]);
+export const currentFilter = atom("inbox");
+export const searchTerm = atom("");
+export const priorityFilter = atom("");
+export const currentTaskListId = atom(null);
+export const isLoading = atom(false);
 
-// Sistema de suscripción simple
-function createAtom(initialValue, name) {
-    let value = initialValue;
-    let subscribers = [];
-
-    return {
-        get: () => value,
-        set: (newValue) => {
-            console.log(`[taskStore] ${name} updated:`, newValue);
-            value = newValue;
-            subscribers.forEach((callback) => callback(value));
-        },
-        subscribe: (callback) => {
-            subscribers.push(callback);
-            return () => {
-                const index = subscribers.indexOf(callback);
-                if (index > -1) subscribers.splice(index, 1);
-            };
-        },
-    };
-}
-
-// Crear atoms
-export const allTasks = createAtom([], "allTasks");
-export const currentFilter = createAtom("inbox", "currentFilter");
-export const searchTerm = createAtom("", "searchTerm");
-export const priorityFilter = createAtom("", "priorityFilter");
-export const currentTaskListId = createAtom(null, "currentTaskListId");
-export const isLoading = createAtom(false, "isLoading");
-
-// Computed stores simulados
-export const filteredTasks = {
-    get: () => {
-        const tasks = allTasks.get();
-        const filter = currentFilter.get();
-        const search = searchTerm.get();
-        const priority = priorityFilter.get();
-
+// Computed stores
+export const filteredTasks = computed(
+    [allTasks, currentFilter, searchTerm, priorityFilter],
+    (tasks, filter, search, priority) => {
         let filtered = filterTasksByType(tasks, filter);
 
         // Aplicar filtro de búsqueda
@@ -74,70 +32,54 @@ export const filteredTasks = {
         }
 
         return filtered;
-    },
-    subscribe: (callback) => {
-        // Suscribirse a cambios en las dependencias
-        const unsubscribers = [
-            allTasks.subscribe(() => callback(filteredTasks.get())),
-            currentFilter.subscribe(() => callback(filteredTasks.get())),
-            searchTerm.subscribe(() => callback(filteredTasks.get())),
-            priorityFilter.subscribe(() => callback(filteredTasks.get())),
-        ];
-        return () => unsubscribers.forEach((unsub) => unsub());
-    },
-};
+    }
+);
 
-export const taskCounts = {
-    get: () => {
-        const tasks = allTasks.get();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+export const taskCounts = computed([allTasks], (tasks) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-        const counts = {
-            inbox: 0,
-            today: 0,
-            upcoming: 0,
-            important: 0,
-            overdue: 0,
-            completed: 0,
-        };
+    const counts = {
+        inbox: 0,
+        today: 0,
+        upcoming: 0,
+        important: 0,
+        overdue: 0,
+        completed: 0,
+    };
 
-        tasks.forEach((task) => {
-            if (task.completed) {
-                counts.completed++;
-            } else {
-                counts.inbox++;
+    tasks.forEach((task) => {
+        if (task.completed) {
+            counts.completed++;
+        } else {
+            counts.inbox++;
 
-                const taskDate = getTaskDate(task);
-                if (taskDate) {
-                    const taskDateOnly = new Date(
-                        taskDate.getFullYear(),
-                        taskDate.getMonth(),
-                        taskDate.getDate()
-                    );
+            const taskDate = getTaskDate(task);
+            if (taskDate) {
+                const taskDateOnly = new Date(
+                    taskDate.getFullYear(),
+                    taskDate.getMonth(),
+                    taskDate.getDate()
+                );
 
-                    if (taskDateOnly.getTime() === today.getTime()) {
-                        counts.today++;
-                    } else if (taskDateOnly < today) {
-                        counts.overdue++;
-                    } else if (taskDateOnly > today) {
-                        counts.upcoming++;
-                    }
-                }
-
-                // Contar importantes
-                if (task.priority === "alta" || task.priority === "high") {
-                    counts.important++;
+                if (taskDateOnly.getTime() === today.getTime()) {
+                    counts.today++;
+                } else if (taskDateOnly < today) {
+                    counts.overdue++;
+                } else if (taskDateOnly > today) {
+                    counts.upcoming++;
                 }
             }
-        });
 
-        return counts;
-    },
-    subscribe: (callback) => {
-        return allTasks.subscribe(() => callback(taskCounts.get()));
-    },
-};
+            // Contar importantes
+            if (task.priority === "alta" || task.priority === "high") {
+                counts.important++;
+            }
+        }
+    });
+
+    return counts;
+});
 
 // Funciones helper
 function filterTasksByType(tasks, filterType) {
