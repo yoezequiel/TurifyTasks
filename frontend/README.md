@@ -33,7 +33,7 @@ npm run dev
 - ✅ **Toggle de completado** - Marcar tareas como completadas/pendientes
 - ✅ **Prioridades** - Sistema de alta, media y baja prioridad
 
-### 📅 Sistema de Fechas Límite (Nuevo)
+### 📅 Sistema de Fechas Límite
 - ✅ **Fechas límite visuales** - Indicadores de tiempo restante con colores
 - ✅ **Estados de urgencia** - Hoy, Mañana, Esta semana, Vencidas, Futuras
 - ✅ **Iconos contextuales** - 🔥 Hoy, ⏰ Mañana, ⚠️ Vencidas
@@ -41,6 +41,26 @@ npm run dev
 - ✅ **Filtro de vencidas** - Apartado específico para tareas vencidas
 - ✅ **Exclusión automática** - Las vencidas no aparecen en Inbox
 - ✅ **Normalización de fechas** - Consistencia entre formulario y visualización
+
+### 📝 Sistema de Validación de Texto (Nuevo)
+- ✅ **Límites de caracteres** - Título y descripción: 120 caracteres máximo
+- ✅ **Contadores dinámicos** - Visualización en tiempo real (ej: 45/120)
+- ✅ **Validación visual** - Colores progresivos: gris → amarillo → rojo
+- ✅ **Prevención de errores** - No permite envío si excede límites
+- ✅ **Mensajes específicos** - Errores claros y contextuales
+
+### 📱 Truncado Responsive Inteligente (Nuevo)
+- ✅ **Adaptación automática** - Texto completo en pantallas >1500px
+- ✅ **Truncado optimizado** - 20 caracteres + "..." en pantallas ≤1500px
+- ✅ **Doble renderizado** - Versiones completa y truncada simultáneas
+- ✅ **Control CSS** - Media queries para rendimiento óptimo
+- ✅ **Experiencia consistente** - Mismo comportamiento en componentes Astro y JavaScript
+
+### 🛠️ Arquitectura Modular (Nuevo)
+- ✅ **Utilidades centralizadas** - `src/utils/textUtils.ts` y `src/utils/themeUtils.ts`
+- ✅ **Eliminación de duplicación** - Funciones reutilizables entre componentes
+- ✅ **TypeScript estricto** - Tipado completo y validaciones
+- ✅ **Constantes configurables** - Límites y colores centralizados
 
 ### 🎨 Diseño y UX
 - ✅ **Diseño responsivo** - Optimizado para móvil y desktop
@@ -59,18 +79,38 @@ frontend/
 │   │   ├── login.astro          # Página de inicio de sesión
 │   │   ├── register.astro       # Página de registro
 │   │   └── dashboard.astro      # Dashboard principal
+│   ├── components/
+│   │   ├── TaskForm.astro       # Formulario de tareas con validación
+│   │   ├── TaskItem.astro       # Item individual con truncado responsive
+│   │   ├── TaskList.astro       # Lista de tareas
+│   │   └── DueDateInfo.astro    # Componente de fechas límite
+│   ├── utils/                   # Utilidades modulares (Nuevo)
+│   │   ├── textUtils.ts         # Funciones de texto y validación
+│   │   └── themeUtils.ts        # Constantes de tema y colores
 │   ├── styles/
+│   │   ├── dashboard.css        # Estilos del dashboard
 │   │   ├── login.css           # Estilos para login
-│   │   └── register.css        # Estilos para registro
+│   │   ├── register.css        # Estilos para registro
+│   │   └── components/         # Estilos de componentes
+│   │       ├── Dashboard.css    # Componentes del dashboard
+│   │       ├── TaskForm.css     # Formulario de tareas
+│   │       ├── TaskItem.css     # Items individuales
+│   │       └── TaskList.css     # Lista de tareas
 │   └── scripts/
-│       ├── login.js            # Lógica de login (preparado)
-│       └── register.js         # Lógica de registro (preparado)
+│       ├── login.js            # Lógica de login
+│       ├── register.js         # Lógica de registro
+│       ├── dashboard.js        # Lógica del dashboard
+│       ├── tasks.js            # Gestión de tareas con truncado
+│       └── ui.js              # Utilidades de UI
 ├── docs/
 │   ├── README.md              # Documentación completa
 │   ├── STYLES.md              # Guía de estilos
 │   ├── API.md                 # Integración con API
-│   └── CHANGELOG.md           # Historial de cambios
+│   ├── TECHNICAL.md           # Documentación técnica detallada
+│   ├── CHANGELOG.md           # Historial de cambios
+│   └── IMPLEMENTATION.md      # Detalles de implementación
 ├── public/
+│   └── favicon.svg            # Icono de la aplicación
 └── package.json
 ```
 
