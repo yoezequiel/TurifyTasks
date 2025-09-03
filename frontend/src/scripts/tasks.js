@@ -1,5 +1,17 @@
+// tasks.js - Lógica de tareas y helpers
+import { showToast, escapeHtml } from './ui.js';
+
 // Variable para guardar el total de tareas pendientes iniciales por filtro
 let initialPendingCount = {};
+
+export let allTasks = [];
+export let currentFilter = 'inbox';
+
+// Función para obtener el filtro actual
+export function getCurrentFilter() {
+  return currentFilter;
+}
+
 // Crear o editar tarea
 export async function submitTask(taskData) {
   if (!taskData.title || !taskData.title.trim()) throw new Error('El título es obligatorio');
@@ -33,11 +45,6 @@ export async function submitTask(taskData) {
     throw error;
   }
 }
-// tasks.js - Lógica de tareas y helpers
-import { showToast, escapeHtml } from './ui.js';
-
-export let allTasks = [];
-export let currentFilter = 'inbox';
 
 export function getTaskDate(task) {
   let dateStr = task.dueDate || task.due_date || task.createdAt || task.created_at;
@@ -128,6 +135,7 @@ export function filterTasks(filterType) {
     activeItem.classList.add('active');
   }
   
+  // Títulos por defecto
   const titles = {
     inbox: 'Bandeja de entrada',
     today: 'Tareas de hoy',
@@ -135,8 +143,23 @@ export function filterTasks(filterType) {
     important: 'Tareas importantes',
     completed: 'Tareas completadas'
   };
-  document.getElementById('pageTitle').textContent = titles[filterType];
-  document.getElementById('sectionTitle').textContent = titles[filterType];
+  
+  let pageTitle = titles[filterType];
+  
+  // Si es un filtro de lista, usar el nombre de la lista si está disponible
+  if (filterType.startsWith('list-')) {
+    // El título lo establecerá selectTaskList, no lo sobreescribimos aquí
+    // pageTitle permanece undefined para listas
+  }
+  
+  // Solo actualizar el título si tenemos uno definido
+  if (pageTitle) {
+    const pageTitleElement = document.getElementById('pageTitle');
+    const sectionTitleElement = document.getElementById('sectionTitle');
+    if (pageTitleElement) pageTitleElement.textContent = pageTitle;
+    if (sectionTitleElement) sectionTitleElement.textContent = pageTitle;
+  }
+  
   renderTasks();
 }
 
@@ -177,7 +200,18 @@ export function renderTasks() {
       filteredTasks = allTasks.filter(task => task.completed);
       break;
     default:
-      filteredTasks = allTasks;
+      // Verificar si es un filtro de lista
+      if (currentFilter.startsWith('list-')) {
+        const listId = parseInt(currentFilter.replace('list-', ''));
+        console.log('[renderTasks] Filtrando por lista:', listId);
+        filteredTasks = allTasks.filter(task => {
+          console.log('[renderTasks] Tarea:', task.title, 'list_id:', task.list_id, 'Coincide:', task.list_id === listId);
+          return task.list_id === listId;
+        });
+        console.log('[renderTasks] Tareas filtradas por lista:', filteredTasks.length);
+      } else {
+        filteredTasks = allTasks;
+      }
   }
   console.log('[renderTasks] after filter main:', filteredTasks.length);
   

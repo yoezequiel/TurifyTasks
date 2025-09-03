@@ -737,6 +737,7 @@ body {
 	border-left: 3px solid #dc2626;
 }
 
+/* Estilos específicos para las tarjetas con fechas críticas */
 .task-card:has(.due-date-container.critical) {
 	border-left: 3px solid #dc2626;
 	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
@@ -748,4 +749,71 @@ body {
 
 .task-card:has(.due-date-container.tomorrow) {
 	border-left: 3px solid #16a34a;
+}
+
+/* Estilos para gestión de listas */
+.sidebar-section {
+	padding: 1rem 0;
+	border-top: 1px solid var(--border);
+	margin-top: 1rem;
+}
+
+.sidebar-section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.5rem 1.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.sidebar-section-title {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted-foreground);
+	text-transform: uppercase;
+	letter-spacing: 0.025em;
+}
+
+.sidebar-section-action {
+	background: none;
+	border: none;
+	color: var(--muted-foreground);
+	cursor: pointer;
+	padding: 0.25rem;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	transition: all 0.2s;
+}
+
+.sidebar-section-action:hover {
+	background: var(--accent);
+	color: var(--accent-foreground);
+}
+
+.sidebar-manage-lists-btn {
+	width: 100%;
+	background: none;
+	border: none;
+	padding: 0.75rem 1.5rem;
+	text-align: left;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	color: var(--muted-foreground);
+	cursor: pointer;
+	transition: all 0.2s;
+	font-size: 0.875rem;
+}
+
+.sidebar-manage-lists-btn:hover {
+	background: var(--accent);
+	color: var(--accent-foreground);
+}
+
+.sidebar-arrow {
+	transition: transform 0.2s;
+}
+
+.sidebar-manage-lists-btn:hover .sidebar-arrow {
+	transform: translateX(2px);
 }

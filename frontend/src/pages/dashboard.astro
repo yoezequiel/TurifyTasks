@@ -3,6 +3,7 @@
 import type { Task, User } from '../types';
 import TaskList from '../components/TaskList.astro';
 import TaskForm from '../components/TaskForm.astro';
+import TaskListsManager from '../components/TaskListsManager.astro';
 ---
 
 <html lang="es">
@@ -80,6 +81,14 @@ import TaskForm from '../components/TaskForm.astro';
 						</div>
 					</button>
 				</nav>
+				
+				<!-- Sección de gestión de listas -->
+				<div class="sidebar-section">
+					<button class="sidebar-manage-lists-btn" onclick="window.openTaskListsManager()">
+						<span>📋 Gestionar Listas</span>
+						<span class="sidebar-arrow">›</span>
+					</button>
+				</div>
 			</aside>
 
 			<!-- Main content -->
@@ -137,11 +146,15 @@ import TaskForm from '../components/TaskForm.astro';
 
 		<!-- Modal de formulario (usa tu componente avanzado) -->
 		<TaskForm />
+		
+		<!-- Modal de gestión de listas -->
+		<TaskListsManager />
 
 		<!-- Contenedor de notificaciones -->
 		<div class="toast-container" id="toastContainer"></div>
 
 				<script type="module" src="/src/scripts/dashboard.js"></script>
+				<script type="module" src="/src/scripts/taskLists.js"></script>
 				<script type="module" src="/src/scripts/hamburger.js"></script>
 				<script>
 					// Espera a que el módulo dashboard.js cargue y exponga la función

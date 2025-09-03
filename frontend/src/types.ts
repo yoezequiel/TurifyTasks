@@ -13,6 +13,15 @@ export interface Task {
   updated_at: string;
 }
 
+export interface TaskList {
+  id: number;
+  name: string;
+  description?: string;
+  task_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -25,6 +34,11 @@ export interface TaskFormData {
   priority: 'baja' | 'media' | 'alta';
   due_date?: string;
   list_id?: number;
+}
+
+export interface TaskListFormData {
+  name: string;
+  description?: string;
 }
 
 // Extender la interfaz Window con nuestras funciones globales
