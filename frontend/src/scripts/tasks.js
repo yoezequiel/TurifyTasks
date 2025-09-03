@@ -1,5 +1,19 @@
 // Variable para guardar el total de tareas pendientes iniciales por filtro
 let initialPendingCount = {};
+
+// Constantes de configuración
+const TEXT_LIMITS = {
+  TASK_TITLE: 120,
+  TASK_DESCRIPTION: 120,
+  TRUNCATE_LENGTH: 20
+};
+
+// Función para truncar texto
+function truncateText(text, maxLength = TEXT_LIMITS.TRUNCATE_LENGTH) {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
+
 // Crear o editar tarea
 export async function submitTask(taskData) {
   if (!taskData.title || !taskData.title.trim()) throw new Error('El título es obligatorio');
@@ -289,8 +303,14 @@ export function renderTasks() {
           ${checkIcon}
         </button>
         <div class="task-content">
-          <h3 class="task-title${task.completed ? ' completed' : ''}">${escapeHtml(task.title)}</h3>
-          ${task.description ? `<p class="task-desc${task.completed ? ' completed' : ''}">${escapeHtml(task.description)}</p>` : ''}
+          <h3 class="task-title${task.completed ? ' completed' : ''}">
+            <span class="task-title-full">${escapeHtml(task.title)}</span>
+            <span class="task-title-truncated">${escapeHtml(truncateText(task.title, TEXT_LIMITS.TRUNCATE_LENGTH))}</span>
+          </h3>
+          ${task.description ? `<p class="task-desc${task.completed ? ' completed' : ''}">
+            <span class="task-desc-full">${escapeHtml(task.description)}</span>
+            <span class="task-desc-truncated">${escapeHtml(truncateText(task.description, TEXT_LIMITS.TRUNCATE_LENGTH))}</span>
+          </p>` : ''}
           <div class="task-meta">
             <span class="priority-badge ${priorityClass}">${priorityText}</span>
           </div>

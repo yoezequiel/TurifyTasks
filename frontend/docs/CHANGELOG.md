@@ -5,6 +5,75 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-09-02 - LÍMITES DE CARACTERES Y TRUNCADO RESPONSIVE
+
+### 📝 SISTEMA DE VALIDACIÓN DE TEXTO
+
+#### ✨ Added - Límites de Caracteres en Formularios
+- **Validación de Longitud de Texto**
+  - **Título**: Límite de 120 caracteres con validación en tiempo real
+  - **Descripción**: Límite de 120 caracteres con validación en tiempo real
+  - Contadores dinámicos mostrando caracteres usados/disponibles (ej: 0/120)
+  - Validación visual con colores progresivos:
+    - Gris: Estado normal
+    - Amarillo: Advertencia al superar 100 caracteres
+    - Rojo: Peligro al superar 110 caracteres
+
+- **Validación de Formulario Mejorada**
+  - Prevención de envío cuando se exceden los límites
+  - Mensajes de error específicos y localizados
+  - Validación tanto en cliente como servidor
+
+#### 📱 Added - Truncado Responsive Inteligente
+- **Sistema de Visualización Adaptativa**
+  - **Pantallas grandes (>1500px)**: Texto completo visible
+  - **Pantallas pequeñas a medianas (≤1500px)**: Texto truncado a 20 caracteres + "..."
+  - Implementación mediante CSS media queries para rendimiento óptimo
+
+- **Doble Renderizado para Consistencia**
+  - Ambas versiones (completa y truncada) renderizadas simultáneamente
+  - Control de visibilidad via CSS para transiciones fluidas
+  - Aplicado tanto en componentes Astro como JavaScript dinámico
+
+#### 🛠️ Added - Arquitectura de Utilidades
+- **Módulo textUtils.ts**
+  ```typescript
+  export const TEXT_LIMITS = {
+    TASK_TITLE: 120,
+    TASK_DESCRIPTION: 120,
+    TRUNCATE_LENGTH: 20
+  } as const;
+  
+  export function truncateText(text: string, maxLength: number): string
+  export function isValidTextLength(text: string, limit: number): boolean
+  ```
+
+- **Módulo themeUtils.ts**
+  ```typescript
+  export const THEME_COLORS = {
+    TEXT: { NORMAL: '#6b7280', WARNING: '#f59e0b', DANGER: '#dc2626' }
+  } as const;
+  
+  export function getCharCountColor(count: number): string
+  ```
+
+#### 🔧 Technical Improvements
+- **Eliminación de duplicación de código**: Funciones centralizadas y reutilizables
+- **TypeScript compliance**: Tipado estricto y validaciones de tipos
+- **Separación de responsabilidades**: Utilidades, componentes y estilos modulares
+- **Documentación JSDoc**: Funciones completamente documentadas
+
+#### 📱 Responsive Design
+- Breakpoint principal en 1500px para optimizar experiencia en diferentes dispositivos
+- Texto truncado mantiene legibilidad en dispositivos móviles
+- Transiciones suaves entre estados responsive
+
+#### 🎨 User Experience
+- Feedback visual inmediato mientras el usuario escribe
+- Información completa accesible (texto completo en pantallas grandes)
+- Diseño limpio y compacto en dispositivos móviles
+- Consistencia entre renderizado estático y dinámico
+
 ## [2.2.0] - 2025-09-02 - SISTEMA DE FECHAS LÍMITE Y TAREAS VENCIDAS
 
 ### 📅 FECHAS LÍMITE CON INDICADORES VISUALES

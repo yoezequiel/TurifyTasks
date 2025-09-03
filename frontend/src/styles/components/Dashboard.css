@@ -759,3 +759,28 @@ body {
 .task-card:has(.due-date-container.tomorrow) {
 	border-left: 3px solid #16a34a;
 }
+
+/* Responsive text truncation */
+/* Large Desktop (>1500px): Show full text, hide truncated */
+.task-title-truncated,
+.task-desc-truncated {
+	display: none;
+}
+
+.task-title-full,
+.task-desc-full {
+	display: inline;
+}
+
+/* Small to Large screens (≤1500px): Show truncated text, hide full */
+@media (max-width: 1500px) {
+	.task-title-full,
+	.task-desc-full {
+		display: none;
+	}
+	
+	.task-title-truncated,
+	.task-desc-truncated {
+		display: inline;
+	}
+}

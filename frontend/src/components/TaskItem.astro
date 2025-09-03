@@ -1,6 +1,7 @@
 ---
 // TaskItem.astro - Componente individual de tarea
 import DueDateInfo from './DueDateInfo.astro';
+import { truncateText, TEXT_LIMITS } from '../utils/textUtils';
 
 export interface Props {
   task: {
@@ -58,7 +59,10 @@ const getPriorityColor = (priority: string) => {
     <!-- Contenido principal de la tarea -->
     <div class="task-content">
       <div class="task-header">
-        <h3 class="task-title" class:list={[task.completed && 'completed']}>{task.title}</h3>
+        <h3 class="task-title" class:list={[task.completed && 'completed']}>
+          <span class="task-title-full">{task.title}</span>
+          <span class="task-title-truncated">{truncateText(task.title, TEXT_LIMITS.TRUNCATE_LENGTH)}</span>
+        </h3>
         <div class="task-meta">
           <span 
             class="priority-badge" 
@@ -72,7 +76,8 @@ const getPriorityColor = (priority: string) => {
 
       {task.description && (
         <p class="task-description" class:list={[task.completed && 'completed']}>
-          {task.description}
+          <span class="task-desc-full">{task.description}</span>
+          <span class="task-desc-truncated">{truncateText(task.description, TEXT_LIMITS.TRUNCATE_LENGTH)}</span>
         </p>
       )}
 

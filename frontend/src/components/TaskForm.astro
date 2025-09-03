@@ -1,12 +1,15 @@
 ---
 // TaskForm.astro - Formulario para crear y editar tareas
 import type { Task } from '../types';
+import { TEXT_LIMITS } from '../utils/textUtils';
 
 interface Props {
   id?: string;
 }
 
 const { id = 'taskForm' } = Astro.props;
+const titleLimit = TEXT_LIMITS.TASK_TITLE;
+const descriptionLimit = TEXT_LIMITS.TASK_DESCRIPTION;
 ---
 
 <!-- Modal overlay -->
@@ -23,26 +26,38 @@ const { id = 'taskForm' } = Astro.props;
       <input type="hidden" id="taskId" name="id" />
       
       <div class="form-group">
-        <label for="taskTitle" class="form-label">Título *</label>
+        <label for="taskTitle" class="form-label">
+          Título * 
+          <span class="char-counter">
+            <span id="titleCharCount">0</span>/{titleLimit}
+          </span>
+        </label>
         <input 
           type="text" 
           id="taskTitle" 
           name="title" 
           class="form-input" 
           placeholder="Escribe el título de la tarea"
+          maxlength={titleLimit}
           required
         />
         <div class="form-error" id="titleError"></div>
       </div>
 
       <div class="form-group">
-        <label for="taskDescription" class="form-label">Descripción</label>
+        <label for="taskDescription" class="form-label">
+          Descripción
+          <span class="char-counter">
+            <span id="descriptionCharCount">0</span>/{descriptionLimit}
+          </span>
+        </label>
         <textarea 
           id="taskDescription" 
           name="description" 
           class="form-textarea" 
           rows="3"
           placeholder="Describe la tarea (opcional)"
+          maxlength={descriptionLimit}
         ></textarea>
         <div class="form-error" id="descriptionError"></div>
       </div>
@@ -180,11 +195,21 @@ const { id = 'taskForm' } = Astro.props;
   }
 
   .form-label {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 6px;
     font-weight: 500;
     color: #374151;
     font-size: 14px;
+  }
+
+  .char-counter {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 400;
+    margin-left: 8px;
+    transition: color 0.2s ease;
   }
 
   .form-input, .form-textarea, .form-select {
@@ -364,9 +389,29 @@ const { id = 'taskForm' } = Astro.props;
       const dueDateInput = document.getElementById('taskDueDate') as HTMLInputElement;
       const prioritySelect = document.getElementById('taskPriority') as HTMLSelectElement;
       
+      // Contadores de caracteres
+      const titleCounter = document.getElementById('titleCharCount');
+      const descCounter = document.getElementById('descriptionCharCount');
+      
       if (taskIdInput) taskIdInput.value = (task as any)._id || task.id || '';
-      if (titleInput) titleInput.value = task.title || '';
-      if (descInput) descInput.value = task.description || '';
+      if (titleInput) {
+        titleInput.value = task.title || '';
+        // Actualizar contador de título
+        if (titleCounter) {
+          const count = titleInput.value.length;
+          titleCounter.textContent = count.toString();
+          titleCounter.style.color = count > 110 ? '#dc2626' : count > 100 ? '#f59e0b' : '#6b7280';
+        }
+      }
+      if (descInput) {
+        descInput.value = task.description || '';
+        // Actualizar contador de descripción
+        if (descCounter) {
+          const count = descInput.value.length;
+          descCounter.textContent = count.toString();
+          descCounter.style.color = count > 110 ? '#dc2626' : count > 100 ? '#f59e0b' : '#6b7280';
+        }
+      }
       if (dueDateInput) dueDateInput.value = task.due_date || '';
       if (prioritySelect) prioritySelect.value = task.priority || 'media';
     }
@@ -376,10 +421,16 @@ const { id = 'taskForm' } = Astro.props;
       event.preventDefault();
       
       const submitButton = document.getElementById('submitButton') as HTMLButtonElement;
-      updateSubmitButton(true);
       
       try {
         const formData = new FormData(form);
+        
+        // Validar formulario antes de enviar
+        if (!validateForm(formData)) {
+          return; // No continuar si la validación falla
+        }
+        
+        updateSubmitButton(true);
         const taskData = Object.fromEntries(formData.entries());
         
         if (typeof window.submitTask === 'function') {
@@ -402,8 +453,20 @@ const { id = 'taskForm' } = Astro.props;
       let isValid = true;
       
       const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      
+      // Validar título
       if (!title || title.trim() === '') {
         showFieldError('title', 'El título es obligatorio');
+        isValid = false;
+      } else if (title.length > 120) {
+        showFieldError('title', 'El título no puede exceder 120 caracteres');
+        isValid = false;
+      }
+      
+      // Validar descripción
+      if (description && description.length > 120) {
+        showFieldError('description', 'La descripción no puede exceder 120 caracteres');
         isValid = false;
       }
       
@@ -459,6 +522,34 @@ const { id = 'taskForm' } = Astro.props;
 
     if (backdrop) {
       backdrop.addEventListener('click', window.closeTaskForm);
+    }
+
+    // Event listeners para contadores de caracteres
+    const titleInput = document.getElementById('taskTitle') as HTMLInputElement;
+    const descriptionInput = document.getElementById('taskDescription') as HTMLTextAreaElement;
+    const titleCounter = document.getElementById('titleCharCount');
+    const descriptionCounter = document.getElementById('descriptionCharCount');
+
+    if (titleInput && titleCounter) {
+      titleInput.addEventListener('input', function() {
+        const count = this.value.length;
+        titleCounter.textContent = count.toString();
+        titleCounter.style.color = count > 110 ? '#dc2626' : count > 100 ? '#f59e0b' : '#6b7280';
+      });
+      
+      // Actualizar contador inicial
+      titleCounter.textContent = titleInput.value.length.toString();
+    }
+
+    if (descriptionInput && descriptionCounter) {
+      descriptionInput.addEventListener('input', function() {
+        const count = this.value.length;
+        descriptionCounter.textContent = count.toString();
+        descriptionCounter.style.color = count > 110 ? '#dc2626' : count > 100 ? '#f59e0b' : '#6b7280';
+      });
+      
+      // Actualizar contador inicial
+      descriptionCounter.textContent = descriptionInput.value.length.toString();
     }
 
     document.addEventListener('keydown', function(event) {
