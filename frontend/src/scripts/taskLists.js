@@ -5,6 +5,7 @@ import { apiRequest, API_CONFIG } from "../config/api.js";
 
 export let allTaskLists = [];
 export let currentTaskListId = null;
+let isInitialized = false;
 
 // Cargar todas las listas de tareas
 export async function loadTaskLists() {
@@ -202,6 +203,8 @@ export function updateSidebarLists() {
 
 // Crear o editar lista
 export async function submitTaskList(listData) {
+    console.log("submitTaskList ejecutada con datos:", listData);
+
     if (!listData.name || !listData.name.trim()) {
         throw new Error("El nombre de la lista es obligatorio");
     }
@@ -212,6 +215,8 @@ export async function submitTaskList(listData) {
         : API_CONFIG.ENDPOINTS.TASK_LISTS.BASE;
     const method = isEdit ? "PUT" : "POST";
 
+    console.log("Enviando request:", { endpoint, method, isEdit });
+
     try {
         const response = await apiRequest(endpoint, {
             method,
@@ -221,18 +226,39 @@ export async function submitTaskList(listData) {
             }),
         });
 
+        console.log("Respuesta recibida:", response.status, response.ok);
+
         if (response.ok) {
             const responseData = await response.json();
-            await loadTaskLists(); // Recargar listas
+            console.log("Datos de respuesta:", responseData);
+
+            if (isEdit) {
+                // Para editar, actualizar la lista existente en el array local
+                const index = allTaskLists.findIndex(
+                    (list) => list.id === listData.id
+                );
+                if (index !== -1) {
+                    allTaskLists[index] = responseData.data;
+                }
+            } else {
+                // Para crear, agregar la nueva lista al array local
+                allTaskLists.unshift(responseData.data); // Agregar al principio
+            }
+
+            // Re-renderizar las listas con los datos actualizados
+            renderTaskLists();
+            updateSidebarLists();
             updateTaskFormSelector(); // Actualizar selector del formulario
+
             showToast(isEdit ? "Lista actualizada" : "Lista creada", "success");
             return responseData.data;
         } else {
             const errorData = await response.json();
+            console.error("Error en respuesta:", errorData);
             throw new Error(errorData.error || "Error al guardar lista");
         }
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Error en submitTaskList:", error);
         throw error;
     }
 }
@@ -287,7 +313,13 @@ window.openTaskListsManager = function () {
     const modal = document.getElementById("taskListsManager");
     if (modal) {
         modal.style.display = "flex";
-        loadTaskLists(); // Recargar listas al abrir
+        // Solo recargar si no hay listas cargadas
+        if (allTaskLists.length === 0) {
+            loadTaskLists();
+        } else {
+            // Solo re-renderizar las listas existentes
+            renderTaskLists();
+        }
     }
 };
 
@@ -299,21 +331,62 @@ window.closeTaskListsManager = function () {
 };
 
 window.openCreateListForm = function () {
+    console.log("Intentando abrir formulario de crear lista");
+
     const modal = document.getElementById("listFormModal");
     const title = document.getElementById("listFormTitle");
     const submitText = document.getElementById("listSubmitText");
+    const form = document.getElementById("listFormElement");
 
-    if (modal && title && submitText) {
-        // Limpiar formulario
-        document.getElementById("listFormElement").reset();
-        document.getElementById("listId").value = "";
+    console.log("Elementos encontrados:", {
+        modal: !!modal,
+        title: !!title,
+        submitText: !!submitText,
+        form: !!form,
+    });
 
-        // Configurar para crear
+    if (!modal) {
+        console.error("No se encontró el modal listFormModal");
+        return;
+    }
+
+    // Limpiar formulario si existe
+    if (form) {
+        form.reset();
+        const idField = document.getElementById("listId");
+        if (idField) {
+            idField.value = "";
+        }
+    }
+
+    // Configurar textos si existen los elementos
+    if (title) {
         title.textContent = "Nueva Lista";
-        submitText.textContent = "Crear Lista";
+    }
 
-        modal.style.display = "flex";
-        document.getElementById("listName").focus();
+    if (submitText) {
+        submitText.textContent = "Crear Lista";
+    }
+
+    // Mostrar modal
+    modal.style.display = "flex";
+    console.log("Modal mostrado");
+
+    // Enfocar el campo nombre si existe
+    setTimeout(() => {
+        const nameField = document.getElementById("listName");
+        if (nameField) {
+            nameField.focus();
+            console.log("Campo nombre enfocado");
+        }
+    }, 100);
+
+    // Verificar que el formulario tenga el listener
+    if (form && !form.hasAttribute("data-listener-ready")) {
+        console.warn(
+            "El formulario no tiene listener de submit, intentando agregarlo"
+        );
+        initializeFormListener(form);
     }
 };
 
@@ -353,7 +426,18 @@ window.closeListForm = function () {
 };
 
 // Manejar envío del formulario de lista
-document.addEventListener("DOMContentLoaded", function () {
+function initializeTaskListEvents() {
+    if (isInitialized) {
+        console.log("Eventos ya inicializados, saltando...");
+        return;
+    }
+
+    console.log("Inicializando eventos de listas de tareas");
+    isInitialized = true;
+
+    // Cargar listas al inicializar
+    loadTaskLists();
+
     // Asegurar que los modales estén ocultos al cargar
     const taskListsModal = document.getElementById("taskListsManager");
     const listFormModal = document.getElementById("listFormModal");
@@ -372,34 +456,89 @@ document.addEventListener("DOMContentLoaded", function () {
         if (listFormModal) listFormModal.style.display = "none";
     };
 
-    // Cerrar modales con tecla ESC
+    // Cerrar modales con tecla ESC (solo una vez)
     document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
             window.closeAllModals();
         }
     });
 
+    // Buscar el formulario y agregar listener
     const listForm = document.getElementById("listFormElement");
+    console.log("Buscando formulario:", listForm);
+
     if (listForm) {
-        listForm.addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(listForm);
-            const listData = {
-                id: formData.get("id") || null,
-                name: formData.get("name"),
-                description: formData.get("description"),
-            };
-
-            try {
-                await submitTaskList(listData);
-                window.closeListForm();
-            } catch (error) {
-                showToast(error.message, "error");
+        console.log("Formulario encontrado, inicializando listener");
+        initializeFormListener(listForm);
+    } else {
+        console.error("No se encontró el formulario listFormElement");
+        // Intentar de nuevo después de un breve delay
+        setTimeout(() => {
+            const retryForm = document.getElementById("listFormElement");
+            if (retryForm) {
+                console.log("Formulario encontrado en reintento");
+                initializeFormListener(retryForm);
             }
-        });
+        }, 500);
     }
-});
+}
+
+function initializeFormListener(form) {
+    if (form.hasAttribute("data-listener-ready")) {
+        console.log("Formulario ya tiene listener, saltando...");
+        return;
+    }
+
+    form.setAttribute("data-listener-ready", "true");
+    console.log("Agregando listener al formulario");
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        console.log("Evento submit ejecutado - timestamp:", Date.now());
+
+        // Prevenir múltiples envíos
+        if (form.dataset.submitting === "true") {
+            console.log("Formulario ya enviándose, cancelando...");
+            return;
+        }
+
+        form.dataset.submitting = "true";
+
+        const formData = new FormData(form);
+        const listData = {
+            id: formData.get("id") || null,
+            name: formData.get("name"),
+            description: formData.get("description"),
+        };
+
+        console.log("Datos del formulario:", listData);
+
+        if (!listData.name || !listData.name.trim()) {
+            showToast("El nombre de la lista es obligatorio", "error");
+            form.dataset.submitting = "false";
+            return;
+        }
+
+        try {
+            console.log("Enviando datos al servidor...");
+            await submitTaskList(listData);
+            console.log("Lista creada exitosamente");
+            window.closeListForm();
+        } catch (error) {
+            console.error("Error al crear lista:", error);
+            showToast(error.message, "error");
+        } finally {
+            form.dataset.submitting = "false";
+        }
+    });
+}
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeTaskListEvents);
+} else {
+    initializeTaskListEvents();
+}
 
 // Poblar selector de listas en el formulario de tareas
 export function populateTaskFormListSelector(preSelectListId = null) {
@@ -443,6 +582,3 @@ function updateTaskFormSelector() {
 
 // Exponer función globalmente para que pueda ser llamada desde otros scripts
 window.populateTaskFormListSelector = populateTaskFormListSelector;
-
-// Cargar listas al inicializar
-document.addEventListener("DOMContentLoaded", loadTaskLists);
