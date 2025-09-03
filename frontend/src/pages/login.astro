@@ -1,259 +1,309 @@
 ---
 // login.astro
+const pageTitle = "Iniciar Sesión - TurifyTasks";
 ---
 
 <html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Iniciar Sesión - TurifyTasks</title>
-		<link rel="stylesheet" href="/src/styles/login.css" />
-	</head>
-	<body>
-		<div class="container">
-			<div class="header">
-				<div class="logo">
-					<div class="logo-icon">✓</div>
-					<span style="font-size: 20px; font-weight: bold;">TurifyTasks</span>
-				</div>
-				<h1 class="title">Bienvenido de vuelta</h1>
-				<p class="subtitle">Accede a tu cuenta para continuar</p>
-			</div>
-			
-			<div class="form-container">
-				<div class="welcome-back">
-					Inicia sesión para acceder a tu bandeja de entrada
-				</div>
-				
-				<div id="errorMessage" class="error-message"></div>
-				<div id="successMessage" class="success-message"></div>
-				
-				<form id="loginForm">
-					<div class="form-group">
-						<label for="email" class="form-label">Correo electrónico</label>
-						<input 
-							type="email" 
-							id="email" 
-							name="email" 
-							class="form-input" 
-							placeholder="tu@email.com"
-							required
-						>
-						<div id="emailError" class="field-error"></div>
-					</div>
-					
-					<div class="form-group">
-						<label for="password" class="form-label">Contraseña</label>
-						<div class="password-input-container">
-							<input 
-								type="password" 
-								id="password" 
-								name="password" 
-								class="form-input password-input" 
-								placeholder="Tu contraseña"
-								required
-							>
-							<button type="button" class="password-toggle" id="togglePassword">
-								<svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-									<circle cx="12" cy="12" r="3"></circle>
-								</svg>
-								<svg id="eyeOffIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-									<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-									<line x1="1" y1="1" x2="23" y2="23"></line>
-								</svg>
-							</button>
-						</div>
-						<div id="passwordError" class="field-error"></div>
-					</div>
-					
-					<button type="submit" class="btn-primary" id="submitBtn">
-						<span id="buttonText">Iniciar sesión</span>
-						<div class="loading" id="loadingSpinner">
-							<div class="spinner"></div>
-						</div>
-					</button>
-				</form>
-				
-				<div class="register-link">
-					<p>¿No tienes una cuenta? <a href="/register">Regístrate aquí</a></p>
-				</div>
-			</div>
-		</div>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{pageTitle}</title>
+        <link rel="stylesheet" href="/src/styles/login.css" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <div class="logo-icon">✓</div>
+                    <span style="font-size: 20px; font-weight: bold;"
+                        >TurifyTasks</span
+                    >
+                </div>
+                <h1 class="title">Iniciar sesión</h1>
+                <p class="subtitle">
+                    Accede a tu cuenta para gestionar tus tareas
+                </p>
+            </div>
 
-		<script>
-			// Función para mostrar/ocultar error de campo
-			function showFieldError(fieldId, message) {
-				const errorDiv = document.getElementById(fieldId + 'Error');
-				const inputField = document.getElementById(fieldId);
-				if (errorDiv && inputField) {
-					errorDiv.textContent = message;
-					errorDiv.style.display = 'block';
-					inputField.classList.add('error');
-				}
-			}
-			
-			function hideFieldError(fieldId) {
-				const errorDiv = document.getElementById(fieldId + 'Error');
-				const inputField = document.getElementById(fieldId);
-				if (errorDiv && inputField) {
-					errorDiv.style.display = 'none';
-					inputField.classList.remove('error');
-				}
-			}
-			
-			// Validaciones
-			function validateEmail(email) {
-				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-				if (!emailRegex.test(email)) {
-					return 'Por favor ingresa un correo electrónico válido';
-				}
-				return null;
-			}
-			
-			function validatePassword(password) {
-				if (password.length < 1) {
-					return 'La contraseña es obligatoria';
-				}
-				if (password.length < 6) {
-					return 'La contraseña debe tener al menos 6 caracteres';
-				}
-				return null;
-			}
-			
-			// Event listeners para validación en tiempo real
-			document.getElementById('email').addEventListener('blur', function() {
-				const email = this.value;
-				if (email) {
-					const error = validateEmail(email);
-					if (error) {
-						showFieldError('email', error);
-					} else {
-						hideFieldError('email');
-					}
-				}
-			});
-			
-			document.getElementById('password').addEventListener('blur', function() {
-				const password = this.value;
-				if (password) {
-					const error = validatePassword(password);
-					if (error) {
-						showFieldError('password', error);
-					} else {
-						hideFieldError('password');
-					}
-				}
-			});
+            <div class="form-container">
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
 
-			// Función para toggle de contraseña
-			document.getElementById('togglePassword').addEventListener('click', function() {
-				const passwordInput = document.getElementById('password');
-				const eyeIcon = document.getElementById('eyeIcon');
-				const eyeOffIcon = document.getElementById('eyeOffIcon');
-				
-				if (passwordInput.type === 'password') {
-					passwordInput.type = 'text';
-					eyeIcon.style.display = 'none';
-					eyeOffIcon.style.display = 'block';
-				} else {
-					passwordInput.type = 'password';
-					eyeIcon.style.display = 'block';
-					eyeOffIcon.style.display = 'none';
-				}
-			});
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email" class="form-label"
+                            >Correo electrónico</label
+                        >
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-input"
+                            placeholder="tu@email.com"
+                            required
+                        />
+                        <div id="emailError" class="field-error"></div>
+                    </div>
 
-			document.getElementById('loginForm').addEventListener('submit', async function(e) {
-				e.preventDefault();
-				
-				const email = document.getElementById('email').value;
-				const password = document.getElementById('password').value;
-				const submitBtn = document.getElementById('submitBtn');
-				const buttonText = document.getElementById('buttonText');
-				const loadingSpinner = document.getElementById('loadingSpinner');
-				const errorMessage = document.getElementById('errorMessage');
-				const successMessage = document.getElementById('successMessage');
-				
-				// Limpiar errores previos
-				hideFieldError('email');
-				hideFieldError('password');
-				if (errorMessage) errorMessage.style.display = 'none';
-				if (successMessage) successMessage.style.display = 'none';
-				
-				// Validar campos
-				let hasErrors = false;
-				
-				const emailError = validateEmail(email);
-				if (emailError) {
-					showFieldError('email', emailError);
-					hasErrors = true;
-				}
-				
-				const passwordError = validatePassword(password);
-				if (passwordError) {
-					showFieldError('password', passwordError);
-					hasErrors = true;
-				}
-				
-				if (hasErrors) {
-					return;
-				}
-				
-				// Mostrar loading
-				if (submitBtn) submitBtn.disabled = true;
-				if (buttonText) buttonText.style.display = 'none';
-				if (loadingSpinner) loadingSpinner.style.display = 'flex';
-				
-				try {
-					const response = await fetch('http://localhost:3000/api/auth/login', {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-						},
-						credentials: 'include', // Importante para cookies de sesión
-						body: JSON.stringify({ email, password })
-					});
-					
-					const data = await response.json();
-					
-					if (response.ok) {
-						// Login exitoso
-						if (successMessage) {
-							successMessage.textContent = '¡Inicio de sesión exitoso!';
-							successMessage.style.display = 'block';
-						}
-						
-						// Guardar token si viene en la respuesta
-						if (data.token) {
-							localStorage.setItem('authToken', data.token);
-						}
-						
-						// Redirigir después de 1 segundo
-						setTimeout(() => {
-							window.location.href = '/dashboard';
-						}, 1000);
-					} else {
-						// Error en el login
-						if (errorMessage) {
-							errorMessage.textContent = data.error || 'Correo o contraseña incorrectos. Por favor, verifica tus datos.';
-							errorMessage.style.display = 'block';
-						}
-					}
-				} catch (error) {
-					console.error('Error:', error);
-					if (errorMessage) {
-						errorMessage.textContent = 'Error de conexión. Verifica que el servidor esté funcionando.';
-						errorMessage.style.display = 'block';
-					}
-				} finally {
-					// Restaurar botón
-					if (submitBtn) submitBtn.disabled = false;
-					if (buttonText) buttonText.style.display = 'inline';
-					if (loadingSpinner) loadingSpinner.style.display = 'none';
-				}
-			});
-		</script>
-	</body>
+                    <div class="form-group">
+                        <label for="password" class="form-label"
+                            >Contraseña</label
+                        >
+                        <div class="password-input-container">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-input password-input"
+                                placeholder="Tu contraseña"
+                                required
+                            />
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                id="togglePassword">
+                                <svg
+                                    id="eyeIcon"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                    ></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg
+                                    id="eyeOffIcon"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    style="display: none;">
+                                    <path
+                                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                                    ></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="passwordError" class="field-error"></div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        <span id="buttonText">Iniciar sesión</span>
+                        <div class="loading" id="loadingSpinner">
+                            <div class="spinner"></div>
+                        </div>
+                    </button>
+                </form>
+
+                <div class="register-link">
+                    <p>
+                        ¿No tienes una cuenta? <a href="/register"
+                            >Regístrate aquí</a
+                        >
+                    </p>
+                </div>
+            </div>
+        </div>
+    </body>
 </html>
+
+<script>
+    import { initializeAuth } from "../scripts/authUtils.js";
+
+    // Función para mostrar/ocultar error de campo
+    function showFieldError(fieldId, message) {
+        const errorDiv = document.getElementById(fieldId + "Error");
+        const inputField = document.getElementById(fieldId);
+        if (errorDiv && inputField) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = "block";
+            inputField.classList.add("error");
+        }
+    }
+
+    // Función para limpiar errores de campo
+    function clearFieldError(fieldId) {
+        const errorDiv = document.getElementById(fieldId + "Error");
+        const inputField = document.getElementById(fieldId);
+        if (errorDiv && inputField) {
+            errorDiv.style.display = "none";
+            inputField.classList.remove("error");
+        }
+    }
+
+    // Función para alternar visibilidad de contraseña
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById("password");
+        const eyeIcon = document.getElementById("eyeIcon");
+        const eyeOffIcon = document.getElementById("eyeOffIcon");
+
+        if (passwordInput && eyeIcon && eyeOffIcon) {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                eyeIcon.style.display = "none";
+                eyeOffIcon.style.display = "block";
+            } else {
+                passwordInput.type = "password";
+                eyeIcon.style.display = "block";
+                eyeOffIcon.style.display = "none";
+            }
+        }
+    }
+
+    // Inicializar verificación de autenticación
+    initializeAuth();
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Configurar toggle de contraseña
+        const togglePassword = document.getElementById("togglePassword");
+        if (togglePassword) {
+            togglePassword.addEventListener("click", togglePasswordVisibility);
+        }
+
+        // Limpiar errores cuando el usuario empieza a escribir
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+
+        if (emailInput) {
+            emailInput.addEventListener("input", () =>
+                clearFieldError("email")
+            );
+        }
+        if (passwordInput) {
+            passwordInput.addEventListener("input", () =>
+                clearFieldError("password")
+            );
+        }
+
+        const form = document.getElementById("loginForm");
+        if (!form) return;
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            console.log("[Login] Formulario enviado");
+
+            // Limpiar errores previos
+            clearFieldError("email");
+            clearFieldError("password");
+
+            const emailInput = document.getElementById("email");
+            const passwordInput = document.getElementById("password");
+            const submitBtn = document.getElementById("submitBtn");
+            const buttonText = document.getElementById("buttonText");
+            const loadingSpinner = document.getElementById("loadingSpinner");
+            const errorMessage = document.getElementById("errorMessage");
+            const successMessage = document.getElementById("successMessage");
+
+            if (!emailInput || !passwordInput) return;
+
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            console.log("[Login] Datos del formulario:", {
+                email: email,
+                password: "***",
+            });
+
+            // Validaciones básicas
+            let hasErrors = false;
+
+            if (!email || !email.includes("@")) {
+                showFieldError(
+                    "email",
+                    "Por favor, ingresa un correo electrónico válido"
+                );
+                hasErrors = true;
+            }
+
+            if (!password || password.length < 6) {
+                showFieldError(
+                    "password",
+                    "La contraseña debe tener al menos 6 caracteres"
+                );
+                hasErrors = true;
+            }
+
+            if (hasErrors) {
+                return;
+            }
+
+            // Limpiar mensajes previos
+            if (errorMessage) errorMessage.style.display = "none";
+            if (successMessage) successMessage.style.display = "none";
+
+            // Mostrar loading
+            if (submitBtn) submitBtn.disabled = true;
+            if (buttonText) buttonText.style.display = "none";
+            if (loadingSpinner) loadingSpinner.style.display = "flex";
+
+            try {
+                console.log("[Login] Enviando petición al servidor...");
+                const response = await fetch(
+                    "http://localhost:3000/api/auth/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        credentials: "include", // Importante para cookies de sesión
+                        body: JSON.stringify({ email, password }),
+                    }
+                );
+
+                const data = await response.json();
+                console.log("[Login] Respuesta del servidor:", data);
+
+                if (response.ok) {
+                    // Login exitoso
+                    if (successMessage) {
+                        successMessage.textContent =
+                            "¡Inicio de sesión exitoso! Redirigiendo...";
+                        successMessage.style.display = "block";
+                    }
+
+                    // Limpiar cualquier token viejo que pueda existir
+                    localStorage.removeItem("authToken");
+
+                    // Redirigir después de 1 segundo
+                    setTimeout(() => {
+                        window.location.href = "/dashboard";
+                    }, 1000);
+                } else {
+                    // Error en el login
+                    if (errorMessage) {
+                        errorMessage.textContent =
+                            data.error ||
+                            "Credenciales incorrectas. Por favor, verifica tu email y contraseña.";
+                        errorMessage.style.display = "block";
+                    }
+                }
+            } catch (error) {
+                console.error("[Login] Error:", error);
+                if (errorMessage) {
+                    errorMessage.textContent =
+                        "Error de conexión. Verifica que el servidor esté funcionando.";
+                    errorMessage.style.display = "block";
+                }
+            } finally {
+                // Restaurar botón
+                if (submitBtn) submitBtn.disabled = false;
+                if (buttonText) buttonText.style.display = "inline";
+                if (loadingSpinner) loadingSpinner.style.display = "none";
+            }
+        });
+    });
+</script>

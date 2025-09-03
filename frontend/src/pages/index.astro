@@ -1,19 +1,21 @@
 ---
-
+const pageTitle = "TurifyTasks - Gestión de Tareas";
 ---
 
 <html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>TurifyTasks</title>
-	</head>
-	<body>
-		<script>
-			// Redirigir automáticamente al login
-			window.location.href = '/login';
-		</script>
-	</body>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{pageTitle}</title>
+    </head>
+    <body> </body>
 </html>
+
+<script>
+    import { handleAuthRedirect } from "../scripts/authUtils.js";
+
+    // Verificar autenticación y redirigir apropiadamente
+    handleAuthRedirect();
+</script>

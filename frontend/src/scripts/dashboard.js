@@ -1,5 +1,6 @@
 // dashboard.js - Inicialización y orquestación de dashboard
 console.log("[dashboard.js] cargado");
+import { initializeAuth } from "./authUtils.js";
 import { checkAuthentication, updateUserUI, logout } from "./auth.js";
 import {
     loadTasks,
@@ -80,6 +81,9 @@ window.closeTaskForm = function () {
         modal.style.display = "none";
     }
 };
+
+// Inicializar verificación de autenticación automática
+initializeAuth();
 
 // Inicialización
 window.addEventListener("DOMContentLoaded", () => {

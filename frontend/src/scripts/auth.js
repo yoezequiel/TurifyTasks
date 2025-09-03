@@ -1,41 +1,30 @@
 // auth.js - Funciones de autenticación y usuario
+import { logout as authUtilsLogout, checkAuthStatus } from "./authUtils.js";
+
 export async function checkAuthentication() {
-  try {
-    const response = await fetch('http://localhost:3000/api/auth/profile', {
-      method: 'GET',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      updateUserUI(data.user);
-    } else {
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
+    try {
+        const authStatus = await checkAuthStatus();
+        if (authStatus.authenticated) {
+            updateUserUI(authStatus.user);
+            return true;
+        } else {
+            window.location.href = "/login";
+            return false;
+        }
+    } catch (error) {
+        console.error("Error verificando autenticación:", error);
+        window.location.href = "/login";
+        return false;
     }
-  } catch (error) {
-    console.error('Error verificando autenticación:', error);
-    window.location.href = '/login';
-  }
 }
 
 export function updateUserUI(user) {
-  const userEmail = document.getElementById('userEmail');
-  const userAvatar = document.getElementById('userAvatar');
-  if (userEmail) userEmail.textContent = user.username;
-  if (userAvatar) userAvatar.textContent = user.username.charAt(0).toUpperCase();
+    const userEmail = document.getElementById("userEmail");
+    const userAvatar = document.getElementById("userAvatar");
+    if (userEmail) userEmail.textContent = user.username;
+    if (userAvatar)
+        userAvatar.textContent = user.username.charAt(0).toUpperCase();
 }
 
-export async function logout() {
-  try {
-    await fetch('http://localhost:3000/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    console.error('Error durante logout:', error);
-  }
-  localStorage.removeItem('authToken');
-  window.location.href = '/login';
-}
+// Usar la función de logout de authUtils que ya tiene mejor manejo
+export const logout = authUtilsLogout;
