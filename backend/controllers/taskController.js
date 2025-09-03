@@ -1,11 +1,12 @@
-import { db } from '../db.js';
-import { TaskService } from '../services/taskService.js';
+import { db } from "../db.js";
+import { TaskService } from "../services/taskService.js";
 
-// GET /api/tasks - Obtener todas las tareas del usuario actual
-export const getTasks = async (req, res) => {
+// Obtener todas las tareas del usuario
+export async function getTasks(req, res) {
     try {
-        const userId = req.session.user.id;
-        
+        const userId = req.user.id;
+        console.log("[getTasks] Usuario ID:", userId);
+
         const result = await db.execute({
             sql: `SELECT 
                     t.id, 
@@ -20,66 +21,90 @@ export const getTasks = async (req, res) => {
                     tl.name as list_name
                   FROM tasks t 
                   LEFT JOIN task_lists tl ON t.list_id = tl.id
-                  WHERE t.user_id = ? 
+                  WHERE t.user_id = ?
                   ORDER BY t.created_at DESC`,
-            args: [userId]
+            args: [userId],
         });
 
-        res.json({
-            success: true,
-            data: result.rows
-        });
+        console.log("[getTasks] Tareas encontradas:", result.rows.length);
+        res.json(result.rows);
     } catch (error) {
-        console.error('Error al obtener tareas:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
+        console.error("[getTasks] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
-};
+}
 
-// POST /api/tasks - Crear una nueva tarea para el usuario actual
-export const createTask = async (req, res) => {
+// Crear una nueva tarea
+export async function createTask(req, res) {
     try {
-        const userId = req.session.user.id;
-        const { title, description, due_date, priority = 'media', list_id } = req.body;
+        const userId = req.user.id;
+        const { title, description, due_date, priority, list_id } = req.body;
 
-        // Validaciones básicas
-        if (!title || title.trim() === '') {
-            return res.status(400).json({
-                success: false,
-                error: 'El título es obligatorio'
-            });
+        console.log("[createTask] Usuario ID:", userId);
+        console.log("[createTask] Datos recibidos:", {
+            title,
+            description,
+            due_date,
+            priority,
+            list_id,
+        });
+
+        // Validar datos requeridos
+        if (!title || title.trim() === "") {
+            return res.status(400).json({ error: "El título es requerido" });
         }
 
-        // Validar que la prioridad sea válida
-        const validPriorities = ['baja', 'media', 'alta'];
-        if (!validPriorities.includes(priority)) {
-            return res.status(400).json({
-                success: false,
-                error: 'La prioridad debe ser: baja, media o alta'
-            });
-        }
-
-        // Si se proporciona list_id, verificar que pertenezca al usuario
-        if (list_id) {
-            const isValidList = await TaskService.validateListOwnership(list_id, userId);
-            if (!isValidList) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'No tienes permisos para agregar tareas a esta lista'
-                });
+        // Validar que la lista pertenece al usuario (si se especifica)
+        if (list_id && list_id !== null) {
+            const listOwnership = await TaskService.validateListOwnership(
+                list_id,
+                userId
+            );
+            if (!listOwnership) {
+                return res
+                    .status(403)
+                    .json({
+                        error: "No tienes permisos para acceder a esta lista",
+                    });
             }
         }
+
+        // Limpiar datos - convertir valores vacíos a null
+        const cleanedData = {
+            title: title.trim(),
+            description:
+                description && description.trim() !== ""
+                    ? description.trim()
+                    : null,
+            due_date:
+                due_date && due_date.trim() !== "" ? due_date.trim() : null,
+            priority: priority || "media",
+            list_id:
+                list_id && list_id !== "" && list_id !== "0"
+                    ? parseInt(list_id)
+                    : null,
+            user_id: userId,
+            completed: 0,
+        };
+
+        console.log("[createTask] Datos limpiados:", cleanedData);
 
         const result = await db.execute({
-            sql: `INSERT INTO tasks (title, description, due_date, priority, list_id, user_id) 
-                  VALUES (?, ?, ?, ?, ?, ?)`,
-            args: [title, description, due_date || null, priority, list_id || null, userId]
+            sql: `INSERT INTO tasks (title, description, due_date, priority, list_id, user_id, completed) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+                cleanedData.title,
+                cleanedData.description,
+                cleanedData.due_date,
+                cleanedData.priority,
+                cleanedData.list_id,
+                cleanedData.user_id,
+                cleanedData.completed,
+            ],
         });
 
-        // Obtener la tarea creada
-        const newTask = await db.execute({
+        // Obtener la tarea creada con información de la lista
+        const taskResult = await db.execute({
             sql: `SELECT 
                     t.id, 
                     t.title, 
@@ -94,114 +119,111 @@ export const createTask = async (req, res) => {
                   FROM tasks t 
                   LEFT JOIN task_lists tl ON t.list_id = tl.id
                   WHERE t.id = ?`,
-            args: [result.lastInsertRowid]
+            args: [result.lastInsertRowid],
         });
 
-        res.status(201).json({
-            success: true,
-            message: 'Tarea creada exitosamente',
-            data: newTask.rows[0]
-        });
+        console.log(
+            "[createTask] Tarea creada exitosamente:",
+            taskResult.rows[0]
+        );
+        res.status(201).json({ success: true, data: taskResult.rows[0] });
     } catch (error) {
-        console.error('Error al crear tarea:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
+        console.error("[createTask] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
-};
+}
 
-// PUT /api/tasks/:id - Actualizar una tarea existente
-export const updateTask = async (req, res) => {
+// Actualizar una tarea existente
+export async function updateTask(req, res) {
     try {
-        const userId = req.session.user.id;
-        const taskId = req.params.id;
-        const { title, description, due_date, priority, completed, list_id } = req.body;
+        const userId = req.user.id;
+        const taskId = parseInt(req.params.id);
+        const { title, description, due_date, priority, list_id, completed } =
+            req.body;
 
-        // Verificar que la tarea existe y pertenece al usuario
-        const isValidTask = await TaskService.validateTaskOwnership(taskId, userId);
-        if (!isValidTask) {
-            return res.status(404).json({
-                success: false,
-                error: 'Tarea no encontrada o no tienes permisos para modificarla'
-            });
+        console.log("[updateTask] Usuario ID:", userId);
+        console.log("[updateTask] Task ID:", taskId);
+        console.log("[updateTask] Datos recibidos:", {
+            title,
+            description,
+            due_date,
+            priority,
+            list_id,
+            completed,
+        });
+
+        // Validar que la tarea existe y pertenece al usuario
+        const taskOwnership = await TaskService.validateTaskOwnership(
+            taskId,
+            userId
+        );
+        if (!taskOwnership) {
+            return res.status(404).json({ error: "Tarea no encontrada" });
         }
 
-        // Validar prioridad si se proporciona
-        if (priority) {
-            const validPriorities = ['baja', 'media', 'alta'];
-            if (!validPriorities.includes(priority)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'La prioridad debe ser: baja, media o alta'
-                });
+        // Validar datos requeridos
+        if (!title || title.trim() === "") {
+            return res.status(400).json({ error: "El título es requerido" });
+        }
+
+        // Validar que la lista pertenece al usuario (si se especifica)
+        if (list_id && list_id !== null && list_id !== "" && list_id !== "0") {
+            const listOwnership = await TaskService.validateListOwnership(
+                list_id,
+                userId
+            );
+            if (!listOwnership) {
+                console.log(
+                    "[updateTask] Lista no válida:",
+                    list_id,
+                    "para usuario:",
+                    userId
+                );
+                return res
+                    .status(403)
+                    .json({
+                        error: "No tienes permisos para acceder a esta lista",
+                    });
             }
         }
 
-        // Si se proporciona list_id, verificar que pertenezca al usuario
-        if (list_id) {
-            const isValidList = await TaskService.validateListOwnership(list_id, userId);
-            if (!isValidList) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'No tienes permisos para mover la tarea a esta lista'
-                });
-            }
-        }
+        // Limpiar datos - convertir valores vacíos a null
+        const cleanedData = {
+            title: title.trim(),
+            description:
+                description && description.trim() !== ""
+                    ? description.trim()
+                    : null,
+            due_date:
+                due_date && due_date.trim() !== "" ? due_date.trim() : null,
+            priority: priority || "media",
+            list_id:
+                list_id && list_id !== "" && list_id !== "0"
+                    ? parseInt(list_id)
+                    : null,
+            completed: completed !== undefined ? (completed ? 1 : 0) : 0,
+        };
 
-        // Construir la query de actualización dinámicamente
-        const updates = [];
-        const args = [];
-
-        if (title !== undefined) {
-            if (!title || title.trim() === '') {
-                return res.status(400).json({
-                    success: false,
-                    error: 'El título no puede estar vacío'
-                });
-            }
-            updates.push('title = ?');
-            args.push(title);
-        }
-        if (description !== undefined) {
-            updates.push('description = ?');
-            args.push(description);
-        }
-        if (due_date !== undefined) {
-            updates.push('due_date = ?');
-            args.push(due_date);
-        }
-        if (priority !== undefined) {
-            updates.push('priority = ?');
-            args.push(priority);
-        }
-        if (completed !== undefined) {
-            updates.push('completed = ?');
-            args.push(completed ? 1 : 0);
-        }
-        if (list_id !== undefined) {
-            updates.push('list_id = ?');
-            args.push(list_id);
-        }
-
-        // Agregar updated_at
-        updates.push('updated_at = CURRENT_TIMESTAMP');
-        args.push(taskId);
-
-        if (updates.length === 1) { // Solo updated_at
-            return res.status(400).json({
-                success: false,
-                error: 'No se proporcionaron campos para actualizar'
-            });
-        }
+        console.log("[updateTask] Datos limpiados:", cleanedData);
 
         await db.execute({
-            sql: `UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`,
-            args: args
+            sql: `UPDATE tasks 
+                  SET title = ?, description = ?, due_date = ?, priority = ?, list_id = ?, completed = ?, updated_at = CURRENT_TIMESTAMP
+                  WHERE id = ? AND user_id = ?`,
+            args: [
+                cleanedData.title,
+                cleanedData.description,
+                cleanedData.due_date,
+                cleanedData.priority,
+                cleanedData.list_id,
+                cleanedData.completed,
+                taskId,
+                userId,
+            ],
         });
 
-        // Obtener la tarea actualizada
-        const updatedTask = await db.execute({
+        // Obtener la tarea actualizada con información de la lista
+        const taskResult = await db.execute({
             sql: `SELECT 
                     t.id, 
                     t.title, 
@@ -215,153 +237,126 @@ export const updateTask = async (req, res) => {
                     tl.name as list_name
                   FROM tasks t 
                   LEFT JOIN task_lists tl ON t.list_id = tl.id
-                  WHERE t.id = ?`,
-            args: [taskId]
+                  WHERE t.id = ? AND t.user_id = ?`,
+            args: [taskId, userId],
         });
 
-        res.json({
-            success: true,
-            message: 'Tarea actualizada exitosamente',
-            data: updatedTask.rows[0]
-        });
+        console.log(
+            "[updateTask] Tarea actualizada exitosamente:",
+            taskResult.rows[0]
+        );
+        res.json({ success: true, data: taskResult.rows[0] });
     } catch (error) {
-        console.error('Error al actualizar tarea:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-};
-
-// DELETE /api/tasks/:id - Eliminar una tarea
-export const deleteTask = async (req, res) => {
-    try {
-        const userId = req.session.user.id;
-        const taskId = req.params.id;
-
-        // Verificar que la tarea existe y pertenece al usuario
-        const isValidTask = await TaskService.validateTaskOwnership(taskId, userId);
-        if (!isValidTask) {
-            return res.status(404).json({
-                success: false,
-                error: 'Tarea no encontrada o no tienes permisos para eliminarla'
+        console.error("[updateTask] Error:", error);
+        if (error.message && error.message.includes("FOREIGN KEY constraint")) {
+            res.status(400).json({
+                error: "Error de referencia: la lista especificada no existe o no tienes permisos para acceder a ella",
             });
+        } else {
+            res.status(500).json({ error: "Error interno del servidor" });
+        }
+    }
+}
+
+// Eliminar una tarea
+export async function deleteTask(req, res) {
+    try {
+        const userId = req.user.id;
+        const taskId = parseInt(req.params.id);
+
+        console.log("[deleteTask] Usuario ID:", userId);
+        console.log("[deleteTask] Task ID:", taskId);
+
+        // Validar que la tarea existe y pertenece al usuario
+        const taskOwnership = await TaskService.validateTaskOwnership(
+            taskId,
+            userId
+        );
+        if (!taskOwnership) {
+            return res.status(404).json({ error: "Tarea no encontrada" });
         }
 
         await db.execute({
-            sql: 'DELETE FROM tasks WHERE id = ?',
-            args: [taskId]
+            sql: "DELETE FROM tasks WHERE id = ? AND user_id = ?",
+            args: [taskId, userId],
         });
 
-        res.json({
-            success: true,
-            message: 'Tarea eliminada exitosamente'
-        });
+        console.log("[deleteTask] Tarea eliminada exitosamente");
+        res.json({ success: true, message: "Tarea eliminada exitosamente" });
     } catch (error) {
-        console.error('Error al eliminar tarea:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
+        console.error("[deleteTask] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
-};
+}
 
-// GET /api/tasks/stats - Obtener estadísticas de tareas del usuario
-export const getTaskStats = async (req, res) => {
+// Obtener estadísticas de tareas
+export async function getTaskStats(req, res) {
     try {
-        const userId = req.session.user.id;
+        const userId = req.user.id;
         const stats = await TaskService.getTaskStats(userId);
-        
-        res.json({
-            success: true,
-            data: stats
-        });
+        res.json(stats);
     } catch (error) {
-        console.error('Error al obtener estadísticas:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
+        console.error("[getTaskStats] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
-};
+}
 
-// GET /api/tasks/priority/:priority - Obtener tareas por prioridad
-export const getTasksByPriority = async (req, res) => {
+// Obtener tareas por prioridad
+export async function getTasksByPriority(req, res) {
     try {
-        const userId = req.session.user.id;
+        const userId = req.user.id;
         const { priority } = req.params;
-        
-        const validPriorities = ['baja', 'media', 'alta'];
+
+        const validPriorities = ["baja", "media", "alta"];
         if (!validPriorities.includes(priority)) {
-            return res.status(400).json({
-                success: false,
-                error: 'La prioridad debe ser: baja, media o alta'
-            });
+            return res.status(400).json({ error: "Prioridad no válida" });
         }
 
         const tasks = await TaskService.getTasksByPriority(userId, priority);
-        
-        res.json({
-            success: true,
-            data: tasks
-        });
+        res.json(tasks);
     } catch (error) {
-        console.error('Error al obtener tareas por prioridad:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
+        console.error("[getTasksByPriority] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
-};
+}
 
-// GET /api/tasks/orphaned - Obtener tareas sin lista asignada
-export const getOrphanedTasks = async (req, res) => {
+// Obtener tareas vencidas
+export async function getOverdueTasks(req, res) {
     try {
-        const userId = req.session.user.id;
-        
+        const userId = req.user.id;
+        const tasks = await TaskService.getOverdueTasks(userId);
+        res.json(tasks);
+    } catch (error) {
+        console.error("[getOverdueTasks] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+}
+
+// Obtener tareas huérfanas (sin lista asignada)
+export async function getOrphanedTasks(req, res) {
+    try {
+        const userId = req.user.id;
+
         const result = await db.execute({
             sql: `SELECT 
-                    t.id, 
-                    t.title, 
-                    t.description, 
-                    t.due_date, 
-                    t.priority, 
-                    t.completed, 
-                    t.list_id,
-                    t.created_at, 
-                    t.updated_at
-                  FROM tasks t 
-                  WHERE t.user_id = ? AND t.list_id IS NULL
-                  ORDER BY t.created_at DESC`,
-            args: [userId]
+                    id, 
+                    title, 
+                    description, 
+                    due_date, 
+                    priority, 
+                    completed, 
+                    list_id,
+                    created_at, 
+                    updated_at
+                  FROM tasks 
+                  WHERE user_id = ? AND list_id IS NULL
+                  ORDER BY created_at DESC`,
+            args: [userId],
         });
 
-        res.json({
-            success: true,
-            data: result.rows
-        });
+        res.json(result.rows);
     } catch (error) {
-        console.error('Error al obtener tareas sin lista:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
+        console.error("[getOrphanedTasks] Error:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
-};
-export const getOverdueTasks = async (req, res) => {
-    try {
-        const userId = req.session.user.id;
-        const tasks = await TaskService.getOverdueTasks(userId);
-        
-        res.json({
-            success: true,
-            data: tasks
-        });
-    } catch (error) {
-        console.error('Error al obtener tareas vencidas:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Error interno del servidor'
-        });
-    }
-};
+}
