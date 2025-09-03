@@ -60,9 +60,11 @@
 	left: 50%;
 	transform: translate(-50%, -50%);
 }
+
 .task-content {
 	flex: 1;
-	min-width: 0; /* Permite que el texto se trunque si es necesario */
+	min-width: 0;
+	/* Permite que el texto se trunque si es necesario */
 }
 
 .task-title {
@@ -96,6 +98,7 @@
 	font-size: 0.8rem;
 	align-items: center;
 }
+
 .priority-badge {
 	padding: 0.125rem 0.5rem;
 	border-radius: 12px;
@@ -118,6 +121,7 @@
 	background-color: #ecfdf5;
 	color: #16a34a;
 }
+
 .task-actions {
 	display: flex;
 	gap: 0.25rem;
@@ -129,7 +133,8 @@
 	opacity: 1;
 }
 
-.edit-btn, .delete-btn {
+.edit-btn,
+.delete-btn {
 	background: none;
 	border: none;
 	padding: 0.5rem;
@@ -173,12 +178,14 @@
 .task-list {
 	color: var(--muted-foreground);
 }
+
 /* Toast content y close button */
 .toast-content {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 }
+
 .toast-close {
 	background: none;
 	border: none;
@@ -186,6 +193,7 @@
 	cursor: pointer;
 	margin-left: 12px;
 }
+
 /* Estilos extraídos de dashboard.astro */
 :root {
 	--background: hsl(0, 0%, 98%);
@@ -481,7 +489,8 @@ body {
 	flex-wrap: wrap;
 }
 
-.search-input, .filter-select {
+.search-input,
+.filter-select {
 	flex: 1;
 	min-width: 200px;
 	padding: 0.75rem;
@@ -492,7 +501,8 @@ body {
 	font-size: 0.875rem;
 }
 
-.search-input:focus, .filter-select:focus {
+.search-input:focus,
+.filter-select:focus {
 	outline: none;
 	border-color: var(--ring);
 	box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
@@ -619,37 +629,45 @@ body {
 }
 
 @keyframes slideIn {
-	from { transform: translateX(100%); opacity: 0; }
-	to { transform: translateX(0); opacity: 1; }
+	from {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
 }
 
 /* Responsive */
 @media (max-width: 768px) {
+
 	/* Mostrar botón hamburguesa */
 	.hamburger-btn {
 		display: flex;
 	}
-	
+
 	/* Ajustar logo para dar espacio al botón */
 	.logo {
 		margin-left: 2.5rem;
 	}
-	
+
 	/* Ocultar email en móvil para ahorrar espacio */
 	.user-info span {
 		display: none;
 	}
-	
+
 	/* Layout en una columna */
 	.dashboard-layout {
 		grid-template-columns: 1fr;
 	}
-	
+
 	/* Mostrar overlay en móvil */
 	.sidebar-overlay {
 		display: block;
 	}
-	
+
 	/* Sidebar como slide-out en móvil */
 	.sidebar {
 		position: fixed;
@@ -662,34 +680,35 @@ body {
 		border-right: none;
 		box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 	}
-	
+
 	.sidebar.sidebar-open {
 		transform: translateX(0);
 	}
-	
+
 	/* Ajustar main content */
 	.main-content {
 		padding: 1rem;
 	}
-	
+
 	/* Ajustar header en móvil */
 	.header-content {
 		padding: 0.75rem 1rem;
 	}
-	
+
 	.search-row {
 		flex-direction: column;
 	}
-	
-	.search-input, .filter-select {
+
+	.search-input,
+	.filter-select {
 		min-width: auto;
 	}
-	
+
 	/* Ajustar header en móvil */
 	.page-title {
 		font-size: 1.5rem;
 	}
-	
+
 	/* Botones de acción en móvil */
 	.actions-section {
 		flex-direction: column;
@@ -702,7 +721,7 @@ body {
 	.header-content {
 		padding: 0.75rem 1.5rem;
 	}
-	
+
 	.main-content {
 		padding: 1.5rem;
 	}
@@ -713,7 +732,7 @@ body {
 	.header-content {
 		padding: 0.75rem 3rem;
 	}
-	
+
 	.main-content {
 		padding: 2.5rem;
 	}
@@ -835,9 +854,12 @@ body {
 
 /* Animación para tareas críticas */
 @keyframes pulse-urgent {
-	0%, 100% {
+
+	0%,
+	100% {
 		box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
 	}
+
 	50% {
 		box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 	}
@@ -876,13 +898,122 @@ body {
 
 /* Small to Large screens (≤1500px): Show truncated text, hide full */
 @media (max-width: 1500px) {
+
 	.task-title-full,
 	.task-desc-full {
 		display: none;
 	}
-	
+
 	.task-title-truncated,
 	.task-desc-truncated {
 		display: inline;
 	}
+}
+
+/* Estilos para botones de gestionar listas */
+.sidebar-section {
+	margin-top: 2rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--border);
+}
+
+.sidebar-manage-lists-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 0.875rem 1rem;
+	background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+	color: var(--primary-foreground);
+	border: none;
+	border-radius: 10px;
+	font-size: 0.9rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+	position: relative;
+	overflow: hidden;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	-ms-border-radius: 10px;
+	-o-border-radius: 10px;
+}
+
+.sidebar-manage-lists-btn::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(90deg,
+			transparent,
+			rgba(255, 255, 255, 0.2),
+			transparent);
+	transition: left 0.5s ease;
+}
+
+.sidebar-manage-lists-btn:hover::before {
+	left: 100%;
+}
+
+.sidebar-manage-lists-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+	background: linear-gradient(135deg, #059669 0%, var(--primary) 100%);
+}
+
+.sidebar-manage-lists-btn:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.sidebar-arrow {
+	font-size: 1.2rem;
+	font-weight: bold;
+	transition: transform 0.3s ease;
+}
+
+.sidebar-manage-lists-btn:hover .sidebar-arrow {
+	transform: translateX(3px);
+}
+
+/* Estilos para sección dinámica de listas */
+.sidebar-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 0 1rem 0;
+	margin-top: 2rem;
+	border-top: 1px solid var(--border);
+}
+
+.sidebar-section-title {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--foreground);
+}
+
+.sidebar-section-action {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	background: var(--accent);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	color: var(--muted-foreground);
+}
+
+.sidebar-section-action:hover {
+	background: var(--primary);
+	color: var(--primary-foreground);
+	border-color: var(--primary);
+	transform: scale(1.05);
+	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
