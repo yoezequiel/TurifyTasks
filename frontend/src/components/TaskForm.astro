@@ -1,7 +1,13 @@
 ---
 // TaskForm.astro - Formulario para crear y editar tareas
 import type { Task } from '../types';
-import { TEXT_LIMITS } from '../utils/textUtils';
+
+// Límites de texto para formularios
+const TEXT_LIMITS = {
+  TASK_TITLE: 120,
+  TASK_DESCRIPTION: 120,
+  TRUNCATE_LENGTH: 20
+} as const;
 
 interface Props {
   id?: string;
