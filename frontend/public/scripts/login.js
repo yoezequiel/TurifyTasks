@@ -64,7 +64,9 @@ document.addEventListener("DOMContentLoaded", function () {
         emailInput.addEventListener("input", () => clearFieldError("email"));
     }
     if (passwordInput) {
-        passwordInput.addEventListener("input", () => clearFieldError("password"));
+        passwordInput.addEventListener("input", () =>
+            clearFieldError("password")
+        );
     }
 
     const form = document.getElementById("loginForm");
@@ -72,8 +74,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     form.addEventListener("submit", async function (e) {
         e.preventDefault();
+        e.stopPropagation();
 
-        console.log("[Login] Formulario enviado");
+        console.log("[Login] Formulario enviado - preventDefault ejecutado");
 
         // Limpiar errores previos
         clearFieldError("email");
@@ -141,19 +144,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (response.ok) {
                 // Login exitoso
+                console.log("[Login] Login exitoso, datos recibidos:", data);
+
                 if (successMessage) {
                     successMessage.textContent =
                         "¡Inicio de sesión exitoso! Redirigiendo...";
                     successMessage.style.display = "block";
                 }
 
-                // Limpiar cualquier token viejo que pueda existir
-                localStorage.removeItem("authToken");
+                // Guardar el token de autenticación si viene en la respuesta
+                if (data.token) {
+                    localStorage.setItem("authToken", data.token);
+                    console.log("[Login] Token guardado en localStorage");
+                } else if (data.data && data.data.token) {
+                    localStorage.setItem("authToken", data.data.token);
+                    console.log(
+                        "[Login] Token guardado en localStorage (desde data.token)"
+                    );
+                }
 
-                // Redirigir después de 1 segundo
+                // Limpiar el formulario
+                form.reset();
+
+                // Redirigir después de un breve delay
                 setTimeout(() => {
-                    window.location.href = "/dashboard";
-                }, 1000);
+                    console.log("[Login] Redirigiendo a dashboard...");
+                    window.location.replace("/dashboard");
+                }, 500);
             } else {
                 // Error en el login
                 if (errorMessage) {
