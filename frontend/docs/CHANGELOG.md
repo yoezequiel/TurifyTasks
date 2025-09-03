@@ -5,6 +5,142 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2025-09-02 - LÍMITES DE CARACTERES Y TRUNCADO RESPONSIVE
+
+### 📝 SISTEMA DE VALIDACIÓN DE TEXTO
+
+#### ✨ Added - Límites de Caracteres en Formularios
+- **Validación de Longitud de Texto**
+  - **Título**: Límite de 120 caracteres con validación en tiempo real
+  - **Descripción**: Límite de 120 caracteres con validación en tiempo real
+  - Contadores dinámicos mostrando caracteres usados/disponibles (ej: 0/120)
+  - Validación visual con colores progresivos:
+    - Gris: Estado normal
+    - Amarillo: Advertencia al superar 100 caracteres
+    - Rojo: Peligro al superar 110 caracteres
+
+- **Validación de Formulario Mejorada**
+  - Prevención de envío cuando se exceden los límites
+  - Mensajes de error específicos y localizados
+  - Validación tanto en cliente como servidor
+
+#### 📱 Added - Truncado Responsive Inteligente
+- **Sistema de Visualización Adaptativa**
+  - **Pantallas grandes (>1500px)**: Texto completo visible
+  - **Pantallas pequeñas a medianas (≤1500px)**: Texto truncado a 20 caracteres + "..."
+  - Implementación mediante CSS media queries para rendimiento óptimo
+
+- **Doble Renderizado para Consistencia**
+  - Ambas versiones (completa y truncada) renderizadas simultáneamente
+  - Control de visibilidad via CSS para transiciones fluidas
+  - Aplicado tanto en componentes Astro como JavaScript dinámico
+
+#### 🛠️ Added - Arquitectura de Utilidades
+- **Módulo textUtils.ts**
+  ```typescript
+  export const TEXT_LIMITS = {
+    TASK_TITLE: 120,
+    TASK_DESCRIPTION: 120,
+    TRUNCATE_LENGTH: 20
+  } as const;
+  
+  export function truncateText(text: string, maxLength: number): string
+  export function isValidTextLength(text: string, limit: number): boolean
+  ```
+
+- **Módulo themeUtils.ts**
+  ```typescript
+  export const THEME_COLORS = {
+    TEXT: { NORMAL: '#6b7280', WARNING: '#f59e0b', DANGER: '#dc2626' }
+  } as const;
+  
+  export function getCharCountColor(count: number): string
+  ```
+
+#### 🔧 Technical Improvements
+- **Eliminación de duplicación de código**: Funciones centralizadas y reutilizables
+- **TypeScript compliance**: Tipado estricto y validaciones de tipos
+- **Separación de responsabilidades**: Utilidades, componentes y estilos modulares
+- **Documentación JSDoc**: Funciones completamente documentadas
+
+#### 📱 Responsive Design
+- Breakpoint principal en 1500px para optimizar experiencia en diferentes dispositivos
+- Texto truncado mantiene legibilidad en dispositivos móviles
+- Transiciones suaves entre estados responsive
+
+#### 🎨 User Experience
+- Feedback visual inmediato mientras el usuario escribe
+- Información completa accesible (texto completo en pantallas grandes)
+- Diseño limpio y compacto en dispositivos móviles
+- Consistencia entre renderizado estático y dinámico
+
+## [2.2.0] - 2025-09-02 - SISTEMA DE FECHAS LÍMITE Y TAREAS VENCIDAS
+
+### 📅 FECHAS LÍMITE CON INDICADORES VISUALES
+
+#### ✨ Added - Visualización de Fechas Límite
+- **Componente DueDateInfo.astro**
+  - Componente dedicado y reutilizable para mostrar fechas límite
+  - Cálculo automático de tiempo restante con lógica inteligente
+  - Normalización consistente de fechas (formato YYYY-MM-DD)
+  - Encapsulación completa con estilos internos siguiendo arquitectura del proyecto
+
+- **Indicadores Visuales de Urgencia**
+  - 🔥 **Vence hoy**: Fondo amarillo/naranja para tareas del día actual
+  - ⏰ **Vence mañana**: Fondo verde para tareas con vencimiento mañana  
+  - 📅 **Esta semana**: Fondo azul para tareas de la semana
+  - ⚠️ **Vencidas**: Fondo rojo con animación de pulso para tareas vencidas
+  - 🗓️ **Futuras**: Estilo neutral para tareas con vencimiento lejano
+
+- **Funcionalidad Dual de Renderizado**
+  - **Server-side**: Componente Astro con renderizado estático
+  - **Client-side**: Funciones JavaScript para contenido dinámico
+  - Consistencia visual garantizada entre ambos métodos
+
+#### 🎯 Added - Filtro de Tareas Vencidas
+- **Filtro "Vencidas" Segregado**
+  - Nuevo filtro independiente en la sidebar
+  - Las tareas vencidas se excluyen automáticamente de "Bandeja de entrada"
+  - Las tareas vencidas se excluyen de "Importantes" y otros filtros
+  - Contador independiente de tareas vencidas
+
+- **Lógica de Vencimiento Inteligente**
+  - Una tarea se considera vencida solo si ha pasado al menos un día completo
+  - Las tareas del día actual siempre muestran "Vence hoy"
+  - Exclusión automática de tareas completadas del filtro vencidas
+
+#### 🎨 Styling - Mejoras de Diseño
+- **Animaciones y Estados Visuales**
+  - Animación de pulso para tareas críticas y vencidas
+  - Estados de color diferenciados por urgencia
+  - Filtro "vencidas" con estilo rojo cuando está activo
+  - Borde izquierdo colorizado en tarjetas según urgencia
+
+- **Responsive Design para Fechas**
+  - Adaptación automática en pantallas móviles
+  - Reducción apropiada de tamaños de fuente
+  - Ajustes de espaciado para dispositivos pequeños
+
+#### 🔧 Technical - Mejoras de Arquitectura
+- **Normalización de Fechas Consistente**
+  - Función `normalizeDateString()` centralizada
+  - Manejo consistente de fechas YYYY-MM-DD entre componentes
+  - Prevención de problemas de zona horaria
+  - Consistencia entre formulario y visualización
+
+- **Funciones JavaScript Mejoradas**
+  - `getDueDateInfo()` y `getDueDateHtml()` para renderizado dinámico
+  - `isTaskOverdue()` para determinación de estado de vencimiento
+  - Integración con sistema de contadores existente
+  - Compatibilidad con filtros de progreso
+
+#### 📱 UX - Experiencia de Usuario
+- **Mensajes Contextuales Mejorados**
+  - "Vence hoy" en lugar de "Vencida hace 0 días"
+  - Formato de fecha sin horario (DD/MM/YYYY)
+  - Información de tiempo restante clara y precisa
+  - Iconos intuitivos para cada estado de urgencia
+
 ## [2.1.0] - 2025-09-02 - MEJORAS RESPONSIVE Y UX
 
 ### 🎯 IMPLEMENTACIÓN MOBILE-FIRST - Menú Hamburguesa y Optimizaciones
