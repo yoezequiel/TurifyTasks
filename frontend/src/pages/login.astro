@@ -122,6 +122,7 @@ const pageTitle = "Iniciar Sesión - TurifyTasks";
 
 <script>
     import { initializeAuth } from "../scripts/authUtils.js";
+    import { apiRequest, API_CONFIG } from "../config/api.js";
 
     // Función para mostrar/ocultar error de campo
     function showFieldError(fieldId, message) {
@@ -252,14 +253,10 @@ const pageTitle = "Iniciar Sesión - TurifyTasks";
 
             try {
                 console.log("[Login] Enviando petición al servidor...");
-                const response = await fetch(
-                    "http://localhost:3000/api/auth/login",
+                const response = await apiRequest(
+                    API_CONFIG.ENDPOINTS.AUTH.LOGIN,
                     {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        credentials: "include", // Importante para cookies de sesión
                         body: JSON.stringify({ email, password }),
                     }
                 );

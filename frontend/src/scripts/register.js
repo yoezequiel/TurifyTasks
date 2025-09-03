@@ -1,4 +1,5 @@
 import { initializeAuth } from "./authUtils.js";
+import { apiRequest, API_CONFIG } from "../config/api.js";
 
 // Inicializar verificación de autenticación
 initializeAuth();
@@ -35,13 +36,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (loadingSpinner) loadingSpinner.style.display = "flex";
 
         try {
-            const response = await fetch(
-                "http://localhost:3000/api/auth/register",
+            const response = await apiRequest(
+                API_CONFIG.ENDPOINTS.AUTH.REGISTER,
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
                     body: JSON.stringify({ username, email, password }),
                 }
             );

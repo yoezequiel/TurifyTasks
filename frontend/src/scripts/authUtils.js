@@ -1,12 +1,11 @@
 // authUtils.js - Utilidades de autenticación persistente
 import { showToast } from "./ui.js";
+import { apiRequest, API_CONFIG } from "../config/api.js";
 
 // Verificar si el usuario está autenticado
 export async function checkAuthStatus() {
     try {
-        const response = await fetch("http://localhost:3000/api/auth/check", {
-            credentials: "include", // Incluir cookies de sesión
-        });
+        const response = await apiRequest(API_CONFIG.ENDPOINTS.AUTH.CHECK);
 
         if (!response.ok) {
             throw new Error("Error al verificar autenticación");
@@ -72,9 +71,8 @@ export async function handleAuthRedirect() {
 // Función para logout
 export async function logout() {
     try {
-        const response = await fetch("http://localhost:3000/api/auth/logout", {
+        const response = await apiRequest(API_CONFIG.ENDPOINTS.AUTH.LOGOUT, {
             method: "POST",
-            credentials: "include",
         });
 
         if (response.ok) {

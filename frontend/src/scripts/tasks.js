@@ -1,5 +1,6 @@
 // tasks.js - Gestión de tareas y filtros con nanostores
 import { showToast } from "./ui.js";
+import { apiRequest, API_CONFIG } from "../config/api.js";
 import {
     allTasks,
     currentFilter,
@@ -24,9 +25,7 @@ export function setCurrentFilter(filter) {
 // Función para pre-seleccionar la lista de tareas en el formulario
 export async function populateTaskFormListSelector(preselectedListId = null) {
     try {
-        const response = await fetch("http://localhost:3000/api/task-lists", {
-            credentials: "include",
-        });
+        const response = await apiRequest(API_CONFIG.ENDPOINTS.TASK_LISTS.BASE);
 
         if (!response.ok) {
             throw new Error("Error al cargar las listas de tareas");
@@ -77,12 +76,12 @@ export async function submitTask(taskData) {
     try {
         const isEdit = taskData.id && taskData.id.toString().trim() !== "";
         const method = isEdit ? "PUT" : "POST";
-        const url = isEdit
-            ? `http://localhost:3000/api/tasks/${taskData.id}`
-            : "http://localhost:3000/api/tasks";
+        const endpoint = isEdit
+            ? `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskData.id}`
+            : API_CONFIG.ENDPOINTS.TASKS.BASE;
 
         console.log("[submitTask] Modo:", isEdit ? "edición" : "creación");
-        console.log("[submitTask] URL:", url);
+        console.log("[submitTask] Endpoint:", endpoint);
         console.log("[submitTask] Datos originales:", taskData);
 
         // Limpiar los datos antes de enviar
@@ -106,12 +105,8 @@ export async function submitTask(taskData) {
 
         console.log("[submitTask] Datos limpiados:", cleanedData);
 
-        const response = await fetch(url, {
+        const response = await apiRequest(endpoint, {
             method: method,
-            headers: {
-                "Content-Type": "application/json",
-            },
-            credentials: "include",
             body: JSON.stringify(cleanedData),
         });
 
@@ -196,9 +191,7 @@ export async function loadTasks() {
         console.log("[loadTasks] Iniciando carga de tareas...");
         taskActions.setLoading(true);
 
-        const response = await fetch("http://localhost:3000/api/tasks", {
-            credentials: "include",
-        });
+        const response = await apiRequest(API_CONFIG.ENDPOINTS.TASKS.BASE);
 
         console.log("[loadTasks] Respuesta del servidor:", response.status);
 
@@ -462,14 +455,10 @@ export async function toggleTask(taskId) {
             throw new Error("Tarea no encontrada");
         }
 
-        const response = await fetch(
-            `http://localhost:3000/api/tasks/${taskId}`,
+        const response = await apiRequest(
+            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
             {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
                 body: JSON.stringify({
                     completed: !task.completed,
                 }),
@@ -501,11 +490,10 @@ export async function deleteTask(taskId) {
     }
 
     try {
-        const response = await fetch(
-            `http://localhost:3000/api/tasks/${taskId}`,
+        const response = await apiRequest(
+            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
             {
                 method: "DELETE",
-                credentials: "include",
             }
         );
 
