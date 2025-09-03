@@ -5,7 +5,12 @@ import TaskList from "../components/TaskList.astro";
 import TaskForm from "../components/TaskForm.astro";
 import TaskListsManager from "../components/TaskListsManager.astro";
 import ConfirmModal from "../components/ConfirmModal.astro";
+import "../styles/dashboard.css";
 import "../styles/components/Dashboard.css";
+import "../styles/components/TaskListsManager.css";
+import "../styles/components/TaskForm.css";
+import "../styles/components/TaskItem.css";
+import "../styles/components/TaskList.css";
 
 const pageTitle = "Dashboard - TurifyTasks";
 ---
@@ -204,9 +209,9 @@ const pageTitle = "Dashboard - TurifyTasks";
         <!-- Contenedor de notificaciones -->
         <div class="toast-container" id="toastContainer"></div>
 
-        <script type="module" src="/src/scripts/dashboard.js"></script>
-        <script type="module" src="/src/scripts/taskLists.js"></script>
-        <script type="module" src="/src/scripts/hamburger.js"></script>
+        <script type="module" src="/scripts/dashboard.js"></script>
+        <script type="module" src="/scripts/taskLists.js"></script>
+        <script type="module" src="/scripts/hamburger.js"></script>
         <script>
             // Espera a que el módulo dashboard.js cargue y exponga la función
             window.addEventListener("DOMContentLoaded", function () {
