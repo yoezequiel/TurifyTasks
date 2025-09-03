@@ -265,42 +265,57 @@ export async function submitTaskList(listData) {
 
 // Eliminar lista
 export async function deleteTaskListById(listId) {
-    if (
-        !confirm(
-            "¿Estás seguro de que quieres eliminar esta lista? Todas las tareas asociadas también se eliminarán."
-        )
-    ) {
-        return;
-    }
+    return new Promise((resolve) => {
+        if (window.ConfirmModal) {
+            window.ConfirmModal.show(
+                "confirmDeleteTaskList",
+                async () => {
+                    try {
+                        const response = await apiRequest(
+                            `${API_CONFIG.ENDPOINTS.TASK_LISTS.BASE}/${listId}`,
+                            {
+                                method: "DELETE",
+                            }
+                        );
 
-    try {
-        const response = await apiRequest(
-            `${API_CONFIG.ENDPOINTS.TASK_LISTS.BASE}/${listId}`,
-            {
-                method: "DELETE",
-            }
-        );
+                        if (response.ok) {
+                            const responseData = await response.json();
 
-        if (response.ok) {
-            const responseData = await response.json();
-            await loadTaskLists(); // Recargar listas
-            updateTaskFormSelector(); // Actualizar selector del formulario
+                            await loadTaskLists(); // Recargar listas
+                            updateTaskFormSelector(); // Actualizar selector del formulario
 
-            // Si se eliminó la lista actualmente seleccionada, volver a inbox
-            if (currentTaskListId === listId) {
-                currentTaskListId = null;
-                filterTasks("inbox"); // Usar el sistema de filtros
-            }
+                            // Si se eliminó la lista actualmente seleccionada, volver a inbox
+                            if (currentTaskListId === listId) {
+                                currentTaskListId = null;
+                                filterTasks("inbox"); // Usar el sistema de filtros
+                            }
 
-            showToast(responseData.message || "Lista eliminada", "success");
+                            showToast(
+                                responseData.message || "Lista eliminada",
+                                "success"
+                            );
+                            resolve(responseData);
+                        } else {
+                            const errorData = await response.json();
+                            throw new Error(
+                                errorData.error || "Error al eliminar lista"
+                            );
+                        }
+                    } catch (error) {
+                        console.error("Error:", error);
+                        showToast(error.message, "error");
+                        resolve(null);
+                    }
+                },
+                () => {
+                    resolve(null); // Usuario canceló
+                }
+            );
         } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Error al eliminar lista");
+            console.error("ConfirmModal no está disponible");
+            resolve(null);
         }
-    } catch (error) {
-        console.error("Error:", error);
-        showToast(error.message, "error");
-    }
+    });
 }
 
 // Obtener lista por ID

@@ -502,29 +502,42 @@ export async function toggleTask(taskId) {
 }
 
 export async function deleteTask(taskId) {
-    if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
-        return;
-    }
+    return new Promise((resolve) => {
+        if (window.ConfirmModal) {
+            window.ConfirmModal.show(
+                "confirmDeleteTask",
+                async () => {
+                    try {
+                        const response = await apiRequest(
+                            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
+                            {
+                                method: "DELETE",
+                            }
+                        );
 
-    try {
-        const response = await apiRequest(
-            `${API_CONFIG.ENDPOINTS.TASKS.BASE}/${taskId}`,
-            {
-                method: "DELETE",
-            }
-        );
+                        if (!response.ok) {
+                            throw new Error("Error al eliminar la tarea");
+                        }
 
-        if (!response.ok) {
-            throw new Error("Error al eliminar la tarea");
+                        // Remover la tarea usando el store
+                        taskActions.removeTask(taskId);
+                        showToast("Tarea eliminada exitosamente", "success");
+                        resolve(true);
+                    } catch (error) {
+                        console.error("Error al eliminar tarea:", error);
+                        showToast(error.message, "error");
+                        resolve(false);
+                    }
+                },
+                () => {
+                    resolve(false); // Usuario canceló
+                }
+            );
+        } else {
+            console.error("ConfirmModal no está disponible");
+            resolve(false);
         }
-
-        // Remover la tarea usando el store
-        taskActions.removeTask(taskId);
-        showToast("Tarea eliminada exitosamente", "success");
-    } catch (error) {
-        console.error("Error al eliminar tarea:", error);
-        showToast(error.message, "error");
-    }
+    });
 }
 
 // Funciones para manejar búsqueda y filtros

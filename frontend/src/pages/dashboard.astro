@@ -4,6 +4,7 @@ import type { Task, User } from "../types";
 import TaskList from "../components/TaskList.astro";
 import TaskForm from "../components/TaskForm.astro";
 import TaskListsManager from "../components/TaskListsManager.astro";
+import ConfirmModal from "../components/ConfirmModal.astro";
 import "../styles/components/Dashboard.css";
 
 const pageTitle = "Dashboard - TurifyTasks";
@@ -182,6 +183,23 @@ const pageTitle = "Dashboard - TurifyTasks";
 
         <!-- Modal de gestión de listas -->
         <TaskListsManager />
+
+        <!-- Modales de confirmación -->
+        <ConfirmModal
+            id="confirmDeleteTask"
+            title="Eliminar tarea"
+            message="¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer."
+            confirmText="Eliminar"
+            cancelText="Cancelar"
+        />
+
+        <ConfirmModal
+            id="confirmDeleteTaskList"
+            title="Eliminar lista de tareas"
+            message="¿Estás seguro de que quieres eliminar esta lista? Todas las tareas asociadas también se eliminarán y esta acción no se puede deshacer."
+            confirmText="Eliminar lista"
+            cancelText="Cancelar"
+        />
 
         <!-- Contenedor de notificaciones -->
         <div class="toast-container" id="toastContainer"></div>
